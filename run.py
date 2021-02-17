@@ -315,7 +315,7 @@ def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), mod
         return model
 
     # split data into sample and validation sets
-    sample_images, sample_targets, validation_images, validation_targets = splitListsForTraining(matList, emotionsList)
+    sample_images, sample_targets, validation_images, validation_targets = splitListsForTraining(matList, emotionsList, dividor=2)
 
     sample_images = np.array(sample_images) / 255
     validation_images = np.array(validation_images) / 255
@@ -420,7 +420,7 @@ def solution2(train_images, test_images):
 def solution3(train_images, test_images):
     # train
     matList, emotionsList, usageList = getImagesAsCvDataLists(train_images)
-    classifier = getCNNClassifier(matList, emotionsList, epochs=500)
+    classifier = getCNNClassifier(matList, emotionsList, loadModelPath='models/500EpochTestModel.keras', epochs=1000)
 
     # predict
     setPredictions(classifier, test_images, usingCNN=True)

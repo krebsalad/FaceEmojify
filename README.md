@@ -8,8 +8,6 @@ Used to learn machine learning...
 1. First test on 17-2-2012
 * 500EpoctTestModel : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 
-
-
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
 

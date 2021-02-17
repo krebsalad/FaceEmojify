@@ -132,3 +132,7 @@ dmypy.json
 resources/*.csv
 resources/*/fer2013
 models/last*
+images/figure*
+resources/*tar.gz*
+resources/*zip*
+images/image*
