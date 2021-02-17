@@ -129,8 +129,6 @@ dmypy.json
 .pyre/
 
 # others
-images/*.jpg
-images/*.png
 resources/*.csv
 resources/*/fer2013
 models/last*

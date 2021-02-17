@@ -3,8 +3,15 @@ An application to predict the emotion on the face of a given person on a 48x48 p
 
 Used to learn machine learning...
 
+# history
+
+1. First test on 17-2-2012
+* 500EpoctTestModel : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
+
+
+
 # Installation
-1. Install (Git)[https://git-scm.com/downloads], gitbash recommended aswell, and (python)[https://www.python.org/]
+1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
 
 2. Start a terminal and install pip
 ```
@@ -18,7 +25,7 @@ git clone https://github.com/krebsalad/FaceEmojify.git
 cd FaceEmojify
 ``` 
 
-4. Create a (virtual environment)[https://docs.python.org/3/library/venv.html] optionally...
+4. Create a [virtual environment](https://docs.python.org/3/library/venv.html) optionally...
 
 5. Install sklearning, matplotlib, opencv, tensorflow, keras
 ```
