@@ -302,17 +302,12 @@ def getCNNClassifier(matList, emotionsList, datasetDividor=5, epochs=500, image_
 
         model.add(Conv2D(128,(3,3), padding="same", activation="relu"))
         model.add(MaxPool2D())
-        model.add(Dropout(0.2))
 
         model.add(Flatten())
-        model.add(Dropout(0.2))
         model.add(Dense(256,activation="relu", kernel_constraint=maxnorm(3)))
         model.add(Dropout(0.2))
-        model.add(BatchNormalization())
 
         model.add(Dense(128,activation="relu", kernel_constraint=maxnorm(3)))
-        model.add(Dropout(0.2))
-        model.add(BatchNormalization())
         model.add(Dense(7, activation="softmax"))
 
         model.summary()
