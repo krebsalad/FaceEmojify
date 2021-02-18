@@ -7,8 +7,12 @@ Used to learn machine learning...
 trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 
 1. First test on 17-2-2012
-* 500EpoctTestModel 
-* 1000EpochTestModel: built on top of 500EpochTestModel
+* 500EpoctTestModel : training data was split 25% (sample) - 75% (validation)
+* 1000EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
+* 750EpochTestModel: built on top of 500EpochTestModel, training data was split 25% (sample) - 75% (validation)
+* 200EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
+* 50EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
+* 150EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)

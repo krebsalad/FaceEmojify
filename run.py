@@ -420,7 +420,7 @@ def solution2(train_images, test_images):
 def solution3(train_images, test_images):
     # train
     matList, emotionsList, usageList = getImagesAsCvDataLists(train_images)
-    classifier = getCNNClassifier(matList, emotionsList, loadModelPath='models/500EpochTestModel.keras', epochs=1000)
+    classifier = getCNNClassifier(matList, emotionsList, loadModelPath='models/500EpochTestModel.keras', epochs=150)
 
     # predict
     setPredictions(classifier, test_images, usingCNN=True)
