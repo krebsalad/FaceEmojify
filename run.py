@@ -268,7 +268,7 @@ def getRandomForestClassifier(pixelsList, emotionsList):
     return trainClassifier(classifier, pixelsList, emotionsList)
 
 
-def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), modelSavePath='models/lastUsedModel.keras', loadModelPath=None, showPlot=False):
+def getCNNClassifier(matList, emotionsList, datasetDividor=5, epochs=500, image_shape=(48,48), modelSavePath='models/lastUsedModel.keras', loadModelPath=None, showPlot=False):
     from keras.preprocessing.image import ImageDataGenerator
     from keras.models import Sequential
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout
@@ -291,15 +291,15 @@ def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), mod
         print("No model given, creating new model...")
         print("adding layers...")
         model = Sequential()
-        model.add(Conv2D(32,3,padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
+        model.add(Conv2D(8,3,padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
         model.add(MaxPool2D())
 
-        model.add(Conv2D(64, 3, padding="same", activation="relu"))
+        model.add(Conv2D(16, 3, padding="same", activation="relu"))
         model.add(MaxPool2D())
         model.add(Dropout(0.4))
 
         model.add(Flatten())
-        model.add(Dense(128,activation="relu"))
+        model.add(Dense(32,activation="relu"))
         model.add(Dense(7, activation="softmax"))
 
         model.summary()
@@ -315,7 +315,7 @@ def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), mod
         return model
 
     # split data into sample and validation sets
-    sample_images, sample_targets, validation_images, validation_targets = splitListsForTraining(matList, emotionsList, dividor=2)
+    sample_images, sample_targets, validation_images, validation_targets = splitListsForTraining(matList, emotionsList, dividor=datasetDividor)
 
     sample_images = np.array(sample_images) / 255
     validation_images = np.array(validation_images) / 255
@@ -420,7 +420,7 @@ def solution2(train_images, test_images):
 def solution3(train_images, test_images):
     # train
     matList, emotionsList, usageList = getImagesAsCvDataLists(train_images)
-    classifier = getCNNClassifier(matList, emotionsList, loadModelPath='models/500EpochTestModel.keras', epochs=150)
+    classifier = getCNNClassifier(matList, emotionsList, datasetDividor=5,epochs=1000)
 
     # predict
     setPredictions(classifier, test_images, usingCNN=True)

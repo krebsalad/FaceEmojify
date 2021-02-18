@@ -14,12 +14,23 @@ CNN configuration
 * Final Regular densely connected layer with 7 outputs (0 - 6)
 
 Results test1:
-* 500EpoctTestModel : training data was split 25% (sample) - 75% (validation)
+* 500EpochTestModel : training data was split 25% (sample) - 75% (validation)
 * 1000EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
 * 750EpochTestModel: built on top of 500EpochTestModel, training data was split 25% (sample) - 75% (validation)
 * 200EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
 * 50EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
 * 150EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
+
+2. Second test on 18-2-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
+CNN configuration
+* Convolutional 2D layer with 8 outputs and kernel size of 3
+* Convolutional 2D layer with 16 outputs and kernel size of 3
+* Dropout layer
+* Regular densely connected NN layer with 32 outputs
+* Final Regular densely connected layer with 7 outputs (0 - 6)
+
+Results test1
+* 1000EpochTestModel : training data was split 20% (sample) - 80% (validation)
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
