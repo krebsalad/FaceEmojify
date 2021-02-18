@@ -4,9 +4,16 @@ An application to predict the emotion on the face of a given person on a 48x48 p
 Used to learn machine learning...
 
 # history
-trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
+1. First test on 17-2-2012 to 18-2-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 
-1. First test on 17-2-2012
+CNN configuration
+* Convolutional 2D layer with 32 outputs and kernel size of 3
+* Convolutional 2D layer with 64 outputs and kernel size of 3
+* Dropout layer
+* Regular densely connected NN layer with 128 outputs
+* Final Regular densely connected layer with 7 outputs (0 - 6)
+
+Results test1:
 * 500EpoctTestModel : training data was split 25% (sample) - 75% (validation)
 * 1000EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
 * 750EpochTestModel: built on top of 500EpochTestModel, training data was split 25% (sample) - 75% (validation)
