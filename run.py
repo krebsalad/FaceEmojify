@@ -271,7 +271,8 @@ def getRandomForestClassifier(pixelsList, emotionsList):
 def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), modelSavePath='models/lastUsedModel.keras', loadModelPath=None, showPlot=False):
     from keras.preprocessing.image import ImageDataGenerator
     from keras.models import Sequential
-    from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout
+    from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization
+    from keras.constraints import maxnorm
     from keras.optimizers import Adam
 
     model = None
@@ -291,15 +292,27 @@ def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), mod
         print("No model given, creating new model...")
         print("adding layers...")
         model = Sequential()
-        model.add(Conv2D(32,3,padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
+        model.add(Conv2D(32,(3,3),padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
         model.add(MaxPool2D())
 
-        model.add(Conv2D(64, 3, padding="same", activation="relu"))
+        model.add(Conv2D(64,(3,3), padding="same", activation="relu"))
         model.add(MaxPool2D())
-        model.add(Dropout(0.4))
+        model.add(Dropout(0.2))
+        model.add(BatchNormalization())
+
+        model.add(Conv2D(128,(3,3), padding="same", activation="relu"))
+        model.add(MaxPool2D())
+        model.add(Dropout(0.2))
 
         model.add(Flatten())
-        model.add(Dense(128,activation="relu"))
+        model.add(Dropout(0.2))
+        model.add(Dense(256,activation="relu", kernel_constraint=maxnorm(3)))
+        model.add(Dropout(0.2))
+        model.add(BatchNormalization())
+
+        model.add(Dense(128,activation="relu", kernel_constraint=maxnorm(3)))
+        model.add(Dropout(0.2))
+        model.add(BatchNormalization())
         model.add(Dense(7, activation="softmax"))
 
         model.summary()
@@ -325,7 +338,7 @@ def getCNNClassifier(matList, emotionsList, epochs=500, image_shape=(48,48), mod
 
     validation_images = tf.reshape(validation_images, (-1, image_shape[0], image_shape[1], 1))
     validation_targets = np.array(validation_targets)
-    
+
     # training
     print("Training with n of", len(sample_images))
     print("validating with n of", len(validation_images))
