@@ -4,9 +4,11 @@ An application to predict the emotion on the face of a given person on a 48x48 p
 Used to learn machine learning...
 
 # history
+trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 
 1. First test on 17-2-2012
-* 500EpoctTestModel : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
+* 500EpoctTestModel 
+* 1000EpochTestModel: built on top of 500EpochTestModel
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
