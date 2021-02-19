@@ -21,7 +21,7 @@ Results test1:
 * 50EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
 * 150EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
 
-2. Third test on 18-2-2021 - 19-2-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
+2. Second test on 18-2-2021 - 19-2-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 CNN configuration
 * Convolutional 2D layer with 32 outputs and kernel size of 3
 * Convolutional 2D layer with 64 outputs and kernel size of 3
