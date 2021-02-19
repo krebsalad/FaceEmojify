@@ -272,7 +272,7 @@ def getCNNClassifier(matList, emotionsList, datasetDividor=5, epochs=500, image_
     from keras.preprocessing.image import ImageDataGenerator
     from keras.models import Sequential
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization
-    from keras.constraints import maxnorm
+    from keras.constraints import max_norm
     from keras.optimizers import Adam
 
     model = None
@@ -303,7 +303,7 @@ def getCNNClassifier(matList, emotionsList, datasetDividor=5, epochs=500, image_
         model.add(Conv2D(128,3, padding="same", activation="relu"))
         model.add(MaxPool2D())
 
-        model.add(Conv2D(256,3, padding="same",activation="relu"))
+        model.add(Conv2D(256,3, padding="same",activation="relu", kernel_constraint=max_norm(3), bias_constraint=max_norm(3)))
         model.add(MaxPool2D())
         model.add(Flatten())
         model.add(Dropout(0.2))
@@ -429,7 +429,7 @@ def solution2(train_images, test_images):
 def solution3(train_images, test_images):
     # train
     matList, emotionsList, usageList = getImagesAsCvDataLists(train_images)
-    classifier = getCNNClassifier(matList, emotionsList, datasetDividor=2,epochs=200)
+    classifier = getCNNClassifier(matList, emotionsList, datasetDividor=1.425,epochs=350)
 
     # predict
     setPredictions(classifier, test_images, usingCNN=True)

@@ -13,10 +13,10 @@ CNN configuration
 * Regular densely connected NN layer with 128 outputs
 * Final Regular densely connected layer with 7 outputs (0 - 6)
 
-Results test2:
-* 500EpochTestModel : training data was split 25% (sample) - 75% (validation)
+Results test1:
+* 500EpochTestModel : training data was split 33% (sample) - 66% (validation)
 * 1000EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
-* 750EpochTestModel: built on top of 500EpochTestModel, training data was split 25% (sample) - 75% (validation)
+* 750EpochTestModel: built on top of 500EpochTestModel, training data was split 33% (sample) - 66% (validation)
 * 200EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
 * 50EpochTestModel: built on top of 500EpochTestModel, training data was split 20% (sample) - 80% (validation)
 * 150EpochTestModel: built on top of 500EpochTestModel, training data was split 50% (sample) - 50% (validation)
@@ -45,8 +45,9 @@ CNN configuration
 * Final Regular densely connected layer with 7 outputs (0 - 6)
 
 Results test3
-* 500EpochTestModel : training data was split 75% (sample) - 25% (validation)
+* 500EpochTestModel : training data was split 66% (sample) - 33% (validation)
 * 200EpochTestModel : training data was split 50% (sample) - 50% (validation)
+* 350EpochTestModel : training data was split 70% (sample) - 30% (validation) with bias and kernel contraints with a max norm of 3
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
