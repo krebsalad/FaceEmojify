@@ -57,8 +57,18 @@ def getRandomForestClassifier(train_instances):
     classifier = ensemble.RandomForestClassifier()
     return trainClassifier(classifier, train_instances)
 
+
+def visualizeModelFitlers(model, _show=False):
+    for layer in model.layers:
+        if 'conv' not in layer.name:
+            continue
+        filters, biases = layer.get_weights()
+        if (_show):
+            plt.imshow(filters[:,:,:,0], cmap='gray')
+        break # TODO!!!
+
 # NN
-def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48,48), modelSavePath='models/lastUsedModel.keras', loadModelPath=None, showPlot=False):
+def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48,48), modelSavePath='models/lastUsedModel.keras', loadModelPath=None, showPlot=False, useTensorBoard=False):
     from keras.preprocessing.image import ImageDataGenerator
     from keras.models import Sequential
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization
@@ -82,18 +92,18 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         print("No model given, creating new model...")
         print("adding layers...")
         model = Sequential()
-        model.add(Conv2D(32,3,padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
+        model.add(Conv2D(32,(3,3),padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
         model.add(MaxPool2D())
 
-        model.add(Conv2D(64,3, padding="same", activation="relu"))
+        model.add(Conv2D(64,(3,3), padding="same", activation="relu"))
         model.add(MaxPool2D())
         model.add(Dropout(0.2))
         model.add(BatchNormalization())
 
-        model.add(Conv2D(128,3, padding="same", activation="relu"))
+        model.add(Conv2D(128,(3,3), padding="same", activation="relu"))
         model.add(MaxPool2D())
 
-        model.add(Conv2D(256,3, padding="same",activation="relu", kernel_constraint=max_norm(3), bias_constraint=max_norm(3)))
+        model.add(Conv2D(256,(3,3), padding="same",activation="relu", kernel_constraint=max_norm(3), bias_constraint=max_norm(3)))
         model.add(MaxPool2D())
         model.add(Flatten())
         model.add(Dropout(0.2))
@@ -102,6 +112,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         model.add(Dense(7, activation="softmax"))
 
         model.summary()
+        visualizeModelFitlers(model)
 
         # compiling model
         print("compiling model...")
@@ -110,6 +121,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
 
     # load onlt the model
     if epochs == 0 and loadModelPath != None:
+        model.summary()
         print("skipped training...")    
         return model
 
@@ -135,14 +147,21 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
     print("Training with n of", len(sample_features))
     print("validating with n of", len(validation_features))
 
-    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets))
+    callbacks = []
+    if useTensorBoard:
+        log_path = 'tensorlog/' + datetime.now().strftime("%Y%m%d-%H%M%S")
+        print("started logging for tensorboard at in ", log_path)
+        print("run command <tensorboard --logdir tensorlog/> and go to http://localhost:6006/ to follow training in browser")
+        callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=1))
+
+    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), callbacks=callbacks)
 
     plotHistory(history,epochs,show=showPlot,name='history_')
 
     # save the model
     if os.path.isfile(modelSavePath):
         modelSavePath = modelSavePath.replace('.keras', '')
-        modelSavePath += str(datetime.timestamp(datetime.now())) + '.keras'
+        modelSavePath += datetime.now().strftime("%Y%m%d-%H%M%S") + '.keras'
 
     print("Saving model as", modelSavePath)
     model.save(modelSavePath)
@@ -193,7 +212,7 @@ def solution2(train_images, test_images):
 
 def solution3(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, datasetDividor=1.425,epochs=1)
+    classifier = getCNNClassifier(train_images, datasetDividor=1.425,epochs=200,useTensorBoard=True)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True)
@@ -204,7 +223,7 @@ def solution3(train_images, test_images):
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv")
+    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
     test_images = readImagesFromCsv("resources/test.csv", max_n=10)
 
     # solution1(train_images, test_images)

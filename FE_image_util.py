@@ -193,7 +193,7 @@ def plotImagesClasses(_images, show=False, name='figure1_', _classRange=7):
             classCount[img.emotion] += 1
     print("class count ", classCount)
     plt.bar(range(len(classCount)), classCount)
-    save_path = 'images/'+ name + ''+ str(datetime.timestamp(datetime.now())) + '.png'
+    save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving classes figures as", save_path)
     plt.savefig(save_path)
     if show:
@@ -222,7 +222,7 @@ def plotHistory(history,epochs,show=False,name='figure2_'):
     plt.legend(loc='upper right')
     plt.title('Training and Validation Loss')
 
-    save_path = 'images/' + name + str(datetime.timestamp(datetime.now())) + '.png'
+    save_path = 'images/' + name + datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving classes figures as", save_path)
     plt.savefig(save_path)
     if show:

@@ -136,3 +136,6 @@ images/figure*
 resources/*tar.gz*
 resources/*zip*
 images/image*
+images/histo*
+images/classe*
+tensorlog

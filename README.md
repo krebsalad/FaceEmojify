@@ -66,3 +66,8 @@ python run.py
 ```
 
 7. make changes directly to the script, go tot the bottom of the script 'run.py' to find a starting point
+
+8. tensorboard can also be used
+```
+pip install tensorboard
+```
