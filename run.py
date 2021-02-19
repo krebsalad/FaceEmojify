@@ -73,7 +73,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
     from keras.models import Sequential
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization
     from keras.constraints import max_norm
-    from keras.optimizers import Adam
+    from keras.optimizers import Adam, RMSprop
 
     model = None
     if loadModelPath:
@@ -116,7 +116,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
 
         # compiling model
         print("compiling model...")
-        opt = Adam(lr=0.000001)
+        opt = RMSprop(lr=0.000001)
         model.compile(optimizer = opt , loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) , metrics = ['accuracy'])
 
     # load onlt the model
@@ -154,7 +154,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         print("run command <tensorboard --logdir tensorlog/> and go to http://localhost:6006/ to follow training in browser")
         callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=1))
 
-    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), callbacks=callbacks)
+    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
 
     plotHistory(history,epochs,show=showPlot,name='history_')
 
@@ -212,7 +212,7 @@ def solution2(train_images, test_images):
 
 def solution3(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, datasetDividor=1.425,epochs=200,useTensorBoard=True)
+    classifier = getCNNClassifier(train_images, datasetDividor=1.425,epochs=500,useTensorBoard=True)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True)
@@ -223,8 +223,8 @@ def solution3(train_images, test_images):
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
-    test_images = readImagesFromCsv("resources/test.csv", max_n=10)
+    train_images = readImagesFromCsv("resources/train.csv")
+    test_images = readImagesFromCsv("resources/test.csv", max_n=100)
 
     # solution1(train_images, test_images)
     # solution2(train_images, test_images)

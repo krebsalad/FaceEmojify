@@ -37,6 +37,9 @@ Results test2
 * 500EpochTestModel : training data was split 66% (sample) - 33% (validation)
 * 200EpochTestModel : training data was split 50% (sample) - 50% (validation)
 * 350EpochTestModel : training data was split 70% (sample) - 30% (validation) with bias and kernel contraints with a max norm of 3
+* 350EpochTestModel : training data was split 70% (sample) - 30% (validation) with bias and kernel contraints with a max norm of 3
+* 500EpcochTestModel : training data was split 70% (sample) - 30% (validation) with bias and kernel contraints with a max norm of 3, instead using optimizer RMSprop and batch sizes of 32 
+
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
