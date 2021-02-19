@@ -34,18 +34,19 @@ Results test2
 
 3. Third test on 18-2-2021 - 19-2-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 CNN configuration
-* Convolutional 2D layer with 32 outputs and kernel size of (3,3)
-* Convolutional 2D layer with 64 outputs and kernel size of (3,3)
+* Convolutional 2D layer with 32 outputs and kernel size of 3
+* Convolutional 2D layer with 64 outputs and kernel size of 3
 * Dropout layer
-* Convolutional 2D layer with 128 outputs and kernel size of (3,3)
+* Convolutional 2D layer with 128 outputs and kernel size of 3
 * Dropout layer
-* Regular densely connected NN layer with 256 outputs and kernel size of (3,3)
+* Convolutional 2D layer with 256 outputs and kernel size of 3
 * Dropout layer
 * Regular densely connected NN layer with 128 outputs
 * Final Regular densely connected layer with 7 outputs (0 - 6)
 
 Results test3
-* 1000EpochTestModel : training data was split 20% (sample) - 80% (validation)
+* 500EpochTestModel : training data was split 75% (sample) - 25% (validation)
+* 200EpochTestModel : training data was split 50% (sample) - 50% (validation)
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)

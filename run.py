@@ -292,22 +292,23 @@ def getCNNClassifier(matList, emotionsList, datasetDividor=5, epochs=500, image_
         print("No model given, creating new model...")
         print("adding layers...")
         model = Sequential()
-        model.add(Conv2D(32,(3,3),padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
+        model.add(Conv2D(32,3,padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
         model.add(MaxPool2D())
 
-        model.add(Conv2D(64,(3,3), padding="same", activation="relu"))
+        model.add(Conv2D(64,3, padding="same", activation="relu"))
         model.add(MaxPool2D())
         model.add(Dropout(0.2))
         model.add(BatchNormalization())
 
-        model.add(Conv2D(128,(3,3), padding="same", activation="relu"))
+        model.add(Conv2D(128,3, padding="same", activation="relu"))
         model.add(MaxPool2D())
 
+        model.add(Conv2D(256,3, padding="same",activation="relu"))
+        model.add(MaxPool2D())
         model.add(Flatten())
-        model.add(Dense(256,activation="relu", kernel_constraint=maxnorm(3)))
         model.add(Dropout(0.2))
 
-        model.add(Dense(128,activation="relu", kernel_constraint=maxnorm(3)))
+        model.add(Dense(128,activation="relu"))
         model.add(Dense(7, activation="softmax"))
 
         model.summary()
@@ -428,7 +429,7 @@ def solution2(train_images, test_images):
 def solution3(train_images, test_images):
     # train
     matList, emotionsList, usageList = getImagesAsCvDataLists(train_images)
-    classifier = getCNNClassifier(matList, emotionsList, datasetDividor=5,epochs=1000)
+    classifier = getCNNClassifier(matList, emotionsList, datasetDividor=2,epochs=200)
 
     # predict
     setPredictions(classifier, test_images, usingCNN=True)
