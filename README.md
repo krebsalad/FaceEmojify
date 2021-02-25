@@ -40,6 +40,24 @@ Results test2
 * 350EpochTestModel : training data was split 70% (sample) - 30% (validation) with bias and kernel contraints with a max norm of 3
 * 500EpcochTestModel : training data was split 70% (sample) - 30% (validation) with bias and kernel contraints with a max norm of 3, instead using optimizer RMSprop and batch sizes of 32 
 
+3. Third test on 25-2-2021 to 26-5-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
+CNN configuration
+* Convolutional 2D layer with 64 outputs and kernel size of 3
+* Drop out layer
+* Convolutional 2D layer with 64 outputs and kernel size of 3
+* Dropout layer
+* Convolutional 2D layer with 128 outputs and kernel size of 3
+* Dropout layer
+* Convolutional 2D layer with 256 outputs and kernel size of 3
+* Dropout layer
+* Convolutional 2D layer with 256 outputs and kernel size of 3
+* Dropout layer
+* Regular densely connected NN layer with 64 outputs
+* Regular densely connected NN layer with 64 outputs
+* Final Regular densely connected layer with 7 outputs (0 - 6)
+
+Results test3
+* 300EpochTestModel : training data was split 80% (sample) - 20% (validation)
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)

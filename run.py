@@ -253,7 +253,7 @@ def solution2(train_images, test_images):
 
 def solution3(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, datasetDividor=1.425,epochs=500,useTensorBoard=True)
+    classifier = getCNNClassifier(train_images, datasetDividor=1.25,epochs=300,useTensorBoard=True)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True)
