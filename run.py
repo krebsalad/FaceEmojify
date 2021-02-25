@@ -3,13 +3,13 @@ from FE_image_util import *
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 import tensorflow as tf
+import random
 
 # for general use
 def splitInstancesForTraining(train_instances, randomize=True, dividor=4):
     # get random indecies
     sample_indecies = []
     if randomize:
-        import random
         sample_indecies = random.sample(range(len(train_instances)), int(len(train_instances)/dividor))
     else:
         sample_indecies = range(int(len(train_instances)/dividor))
@@ -57,21 +57,41 @@ def getRandomForestClassifier(train_instances):
     classifier = ensemble.RandomForestClassifier()
     return trainClassifier(classifier, train_instances)
 
+def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=False, _num_show_img=3):
+    from keras.models import Model
+    layer_outputs = [layer.output for layer in model.layers[:12]]
+    activation_model = Model(inputs=model.input, outputs=layer_outputs) # Creates a model that will return these outputs, given the model input
+    if len(train_images) > 2:
+        indecies = random.sample(range(0, len(train_images)), _num_show_img)
+        imgs = [train_images[i] for i in indecies]
+        if not _show:
+            return
+        for img in imgs:
+            temp = [img.getCvMat().copy()]
+            temp = np.array(temp) / 255
+            temp = tf.reshape(temp, (-1, image_shape[0], image_shape[1], 1))
+            activations = activation_model.predict(temp)
 
-def visualizeModelFitlers(model, _show=False):
-    for layer in model.layers:
-        if 'conv' not in layer.name:
-            continue
-        filters, biases = layer.get_weights()
-        if (_show):
-            plt.imshow(filters[:,:,:,0], cmap='gray')
-        break # TODO!!!
+            for act in activations:
+                for im in act:
+                    if len(im.shape) > 2:
+                        if im.shape[2] == 1:
+                            show_im = cv2.resize(im,image_shape,interpolation=cv2.INTER_CUBIC)
+                            cv2.imshow('img', show_im)
+                            cv2.waitKey(0)
+                        else:
+                            show_im = cv2.resize(im[:,:,0],image_shape,interpolation=cv2.INTER_CUBIC)
+                            for i in range(1, im.shape[2]):
+                                show_im = np.hstack((show_im, cv2.resize(im[:,:,i],image_shape,interpolation=cv2.INTER_CUBIC)))
+                            cv2.imshow('img',show_im)
+                            cv2.waitKey(0)
+                    continue
+            cv2.destroyAllWindows()
 
-# NN
 def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48,48), modelSavePath='models/lastUsedModel.keras', loadModelPath=None, showPlot=False, useTensorBoard=False):
     from keras.preprocessing.image import ImageDataGenerator
     from keras.models import Sequential
-    from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization
+    from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization, experimental, MaxPooling2D
     from keras.constraints import max_norm
     from keras.optimizers import Adam, RMSprop
 
@@ -91,28 +111,49 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         # creating model 
         print("No model given, creating new model...")
         print("adding layers...")
-        model = Sequential()
-        model.add(Conv2D(32,(3,3),padding="same", activation="relu", input_shape=(image_shape[0], image_shape[1], 1)))
-        model.add(MaxPool2D())
-
-        model.add(Conv2D(64,(3,3), padding="same", activation="relu"))
-        model.add(MaxPool2D())
-        model.add(Dropout(0.2))
+        
+        model = Sequential([experimental.preprocessing.RandomFlip("horizontal", input_shape=(image_shape[0], image_shape[1], 1)), 
+                                    experimental.preprocessing.RandomRotation(0.1), 
+                                    experimental.preprocessing.RandomZoom(0.1)])
+        model.add(Conv2D(64,(3,3), kernel_initializer='he_normal', padding="same", activation="relu"))
         model.add(BatchNormalization())
+        model.add(MaxPooling2D((2,2)))
+        model.add(Dropout(0.2))
+
+        model.add(Conv2D(64,(3,3), kernel_initializer='he_normal', padding="same", activation="relu"))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D((2,2)))
+        model.add(Dropout(0.2))
 
         model.add(Conv2D(128,(3,3), padding="same", activation="relu"))
-        model.add(MaxPool2D())
-
-        model.add(Conv2D(256,(3,3), padding="same",activation="relu", kernel_constraint=max_norm(3), bias_constraint=max_norm(3)))
-        model.add(MaxPool2D())
-        model.add(Flatten())
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D((2,2)))
         model.add(Dropout(0.2))
 
-        model.add(Dense(128,activation="relu"))
+        model.add(Conv2D(256,(3,3), padding="same", activation="relu"))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D((2,2)))
+        model.add(Dropout(0.2))
+
+        model.add(Conv2D(256,(3,3), padding="same", activation="relu"))
+        model.add(BatchNormalization())
+        model.add(MaxPooling2D((2,2)))
+        model.add(Dropout(0.2))
+
+        model.add(Flatten())
+
+        model.add(Dense(64,activation="relu"))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.5))
+
+        model.add(Dense(64,activation="relu"))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.5))
+
         model.add(Dense(7, activation="softmax"))
 
         model.summary()
-        visualizeModelFitlers(model)
+        visualizeImageActivations(model,train_images, _show=showPlot)
 
         # compiling model
         print("compiling model...")
