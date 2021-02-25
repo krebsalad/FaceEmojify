@@ -229,3 +229,5 @@ def plotHistory(history,epochs,show=False,name='figure2_'):
         plt.show()
     plt.clf()
     return True
+
+
