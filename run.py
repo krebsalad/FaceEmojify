@@ -115,11 +115,11 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         model = Sequential([experimental.preprocessing.RandomFlip("horizontal", input_shape=(image_shape[0], image_shape[1], 1)), 
                                     experimental.preprocessing.RandomRotation(0.1), 
                                     experimental.preprocessing.RandomZoom(0.1)])
-        model.add(Conv2D(64,(3,3), kernel_initializer='he_normal', padding="same", activation="relu"))
+        model.add(Conv2D(32,(3,3), kernel_initializer='he_normal', padding="same", activation="relu"))
         model.add(BatchNormalization())
         model.add(MaxPooling2D((2,2)))
         model.add(Dropout(0.2))
-
+        
         model.add(Conv2D(64,(3,3), kernel_initializer='he_normal', padding="same", activation="relu"))
         model.add(BatchNormalization())
         model.add(MaxPooling2D((2,2)))
@@ -135,20 +135,16 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         model.add(MaxPooling2D((2,2)))
         model.add(Dropout(0.2))
 
-        model.add(Conv2D(256,(3,3), padding="same", activation="relu"))
-        model.add(BatchNormalization())
-        model.add(MaxPooling2D((2,2)))
-        model.add(Dropout(0.2))
-
         model.add(Flatten())
 
-        model.add(Dense(64,activation="relu"))
+        model.add(Dense(128,activation="relu"))
         model.add(BatchNormalization())
-        model.add(Dropout(0.5))
+        model.add(Dropout(0.2))
+
 
         model.add(Dense(64,activation="relu"))
         model.add(BatchNormalization())
-        model.add(Dropout(0.5))
+        model.add(Dropout(0.2))
 
         model.add(Dense(7, activation="softmax"))
 

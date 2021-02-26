@@ -42,7 +42,7 @@ Results test2
 
 3. Third test on 25-2-2021 to 26-5-2021 : trained and validated with data from a [kaggle competion](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/rules)
 CNN configuration
-* Convolutional 2D layer with 64 outputs and kernel size of 3
+* Convolutional 2D layer with 32 outputs and kernel size of 3
 * Drop out layer
 * Convolutional 2D layer with 64 outputs and kernel size of 3
 * Dropout layer
@@ -50,9 +50,7 @@ CNN configuration
 * Dropout layer
 * Convolutional 2D layer with 256 outputs and kernel size of 3
 * Dropout layer
-* Convolutional 2D layer with 256 outputs and kernel size of 3
-* Dropout layer
-* Regular densely connected NN layer with 64 outputs
+* Regular densely connected NN layer with 128 outputs
 * Regular densely connected NN layer with 64 outputs
 * Final Regular densely connected layer with 7 outputs (0 - 6)
 
