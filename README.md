@@ -56,6 +56,7 @@ CNN configuration
 
 Results test3
 * 300EpochTestModel : training data was split 80% (sample) - 20% (validation)
+* 200EpochtTestModel : training data was split 80% - 20% and built on top of 300EpochTestModel
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
