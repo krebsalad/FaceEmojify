@@ -249,7 +249,7 @@ def solution2(train_images, test_images):
 
 def solution3(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/300EpochTestModel.keras', datasetDividor=1.25,epochs=200,useTensorBoard=True)
+    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/500EpochTestModel.keras', datasetDividor=1.25,epochs=1000,useTensorBoard=True)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True)
