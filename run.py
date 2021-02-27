@@ -323,7 +323,6 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
 
 def main_KNN(train_images, test_images):
     # train
-    image_shape= (48,48)
     classifier = getKNeighborsClassifier(train_images)
 
     # predict
@@ -351,18 +350,13 @@ def main_CNN(train_images, test_images):
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
+    train_images = readImagesFromCsv("resources/train.csv")
     images = readImagesFromCsv("resources/icml_face_data.csv")
 
     test_images = []
-    max_n = 100
-    n = 0
     for image in images:
         if image.usage == 'PrivateTest' or image.usage == 'PublicTest':
             test_images.append(image)
-            n+=1
-            if n > max_n:
-                break
     
     main_CNN(train_images, test_images)
     sys.exit(0)
