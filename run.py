@@ -37,12 +37,6 @@ def trainClassifier(classifier, train_instances):
     # train
     print("Training with n of", len(sample_features))
     classifier.fit(sample_features, sample_targets)
-
-    print("validating with n of", len(validation_features))
-    score = classifier.score(validation_features, validation_targets)
-
-    print("Classifier score:", str(score))
-
     return classifier
 
 def getKNeighborsClassifier(train_instances):
@@ -260,24 +254,27 @@ def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_sh
     print("saving roc curve figure as", save_path)
     fig.savefig(save_path)
 
-def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), _show=False):
+def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), usingCNN=False, _show=False):
     import seaborn as sns
     
     # confisuion matrix
     predictions = model.predict(test_features)
     target_predictions = []
-    for res in predictions:
-        highestProb = 0
-        highestProbI = -1
-        for i, prob in enumerate(res):
-            if prob > highestProb:
-                highestProbI = i
-                highestProb = res[i]
-        target_predictions.append(highestProbI)
+    if usingCNN:
+        for res in predictions:
+            highestProb = 0
+            highestProbI = -1
+            for i, prob in enumerate(res):
+                if prob > highestProb:
+                    highestProbI = i
+                    highestProb = res[i]
+            target_predictions.append(highestProbI)
+    else:
+        target_predictions = predictions
 
+    
     conf_mat = tf.math.confusion_matrix(test_targets, target_predictions)
     conf_mat = tf.cast(conf_mat, dtype='float')
-
     conf_mat_norm = []
     for row in conf_mat:
         s = sum(row)
@@ -299,48 +296,57 @@ def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_
     print("saving conf mat figures as", save_path)
     fig.savefig(save_path)
 
-def evaluateModel(model, test_images, image_shape=(48,48), _show=False):
-    test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
-    test_features = np.array(test_features) / 255
-    test_features = tf.reshape(test_features, (-1, image_shape[0], image_shape[1], 1))
-    test_targets = np.array(test_targets)
-    
-    plotConfusionMatrix(model, test_features, test_targets, image_shape=image_shape, _show=_show)
-    plotRocCurve(model, test_features, test_targets, image_shape=image_shape, numOfClasses=7, _show=_show)
- 
-def solution1(train_images, test_images):
+def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False):
+    test_features, test_targets, test_usage = [], [], []
+
+    if usingCNN:
+        test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
+        test_features = np.array(test_features) / 255
+        test_features = tf.reshape(test_features, (-1, image_shape[0], image_shape[1], 1))
+        test_targets = np.array(test_targets)
+
+        
+        print("Testing with n of", len(test_features))
+        results = model.evaluate(test_features, test_targets)
+        print(results)
+
+        plotRocCurve(model, test_features, test_targets, image_shape=image_shape, numOfClasses=7, _show=_show)
+
+    else:
+        test_features, test_targets, test_usage = getImagesAsDataLists(test_images)
+        print("Testing with n of", len(test_features))
+        score = model.score(test_features, test_targets)
+        print("Classifier score:", str(score))
+
+    plotConfusionMatrix(model, test_features, test_targets, image_shape=image_shape, _show=_show, usingCNN=usingCNN)
+        
+
+def main_KNN(train_images, test_images):
     # train
-    classifier = getRandomForestClassifier(train_images)
-
-    # predict
-    setPredictionsOnImages(classifier, test_images)
-
-    # showImages(test_images, _showPredictedEmotion=True)
-    writeImages(test_images, _showPredictedEmotion=True)
-    
-
-def solution2(train_images, test_images):
-    # train
+    image_shape= (48,48)
     classifier = getKNeighborsClassifier(train_images)
 
     # predict
     setPredictionsOnImages(classifier, test_images)
 
+    # evaluate
+    evaluateModel(classifier, test_images)
+
     # showImages(test_images, _showPredictedEmotion=True)
     writeImages(test_images, _showPredictedEmotion=True)
 
-def solution3(train_images, test_images):
+def main_CNN(train_images, test_images):
     # train
     classifier = getCNNClassifier(train_images, loadModelPath='models/test3/500EpochTestModel.keras', datasetDividor=2,epochs=0,useTensorBoard=True,showPlot=False)
 
     # predict
-    # setPredictionsOnImages(classifier, test_images, usingCNN=True)
+    setPredictionsOnImages(classifier, test_images, usingCNN=True)
 
     # evaluate model
-    evaluateModel(classifier, test_images, _show=True)
+    evaluateModel(classifier, test_images, _show=True, usingCNN=True)
 
     # showImages(test_images, _showPredictedEmotion=True)
-    # writeImages(test_images, _showPredictedEmotion=True)
+    writeImages(test_images, _showPredictedEmotion=True)
 
 # main prog
 def main():
@@ -358,12 +364,7 @@ def main():
             if n > max_n:
                 break
     
-    # solution1(train_images, test_images)
-    # solution2(train_images, test_images)
-    solution3(train_images, test_images)
-
-    
-
+    main_CNN(train_images, test_images)
     sys.exit(0)
 
 if __name__ == "__main__":
