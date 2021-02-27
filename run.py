@@ -148,9 +148,6 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
 
         model.add(Dense(7, activation="softmax"))
 
-        model.summary()
-        visualizeImageActivations(model,train_images, _show=showPlot)
-
         # compiling model
         print("compiling model...")
         opt = RMSprop(lr=0.000001)
@@ -180,10 +177,13 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
     validation_features = tf.reshape(validation_features, (-1, image_shape[0], image_shape[1], 1))
     validation_targets = np.array(validation_targets)
 
+    # info
+    model.summary()
+    visualizeImageActivations(model,train_images, _show=showPlot)
+
     # training
     print("Training with n of", len(sample_features))
     print("validating with n of", len(validation_features))
-
     callbacks = []
     if useTensorBoard:
         log_path = 'tensorlog/' + datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -192,7 +192,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
         callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=1))
 
     history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
-
+    
     plotHistory(history,epochs,show=showPlot,name='history_')
 
     # save the model
@@ -226,6 +226,61 @@ def setPredictionsOnImages(_classifier, _images, usingCNN=False, image_shape=(48
         
         image.p_emotion = p
 
+
+ # def plotRocCurve(model, test_features, test_targets, name, image_shape, _show):
+    # from sklearn.metrics import roc_curve, auc
+
+    # predictions = model.predict(test_features)
+    # fpr_keras, tpr_keras, thresholds_keras = roc_curve(test_targets.ravel(), predictions.ravel())
+
+
+def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), _show=False):
+    import seaborn as sns
+    
+    # confisuion matrix
+    predictions = model.predict(test_features)
+    target_predictions = []
+    for res in predictions:
+        highestProb = 0
+        highestProbI = -1
+        for i, prob in enumerate(res):
+            if prob > highestProb:
+                highestProbI = i
+                highestProb = res[i]
+        target_predictions.append(highestProbI)
+
+    conf_mat = tf.math.confusion_matrix(test_targets, target_predictions)
+    conf_mat = tf.cast(conf_mat, dtype='float')
+
+    conf_mat_norm = []
+    for row in conf_mat:
+        s = sum(row)
+        prob_row = []
+        for n in row:
+            p = n/s
+            prob_row.append(p)
+        conf_mat_norm.append(prob_row)
+
+    sns.heatmap(conf_mat_norm, annot=True,cmap=plt.cm.Blues)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    if _show:
+        plt.show()
+    save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+    print("saving conf mat figures as", save_path)
+    plt.savefig(save_path)
+
+def evaluateModel(model, test_images, name='confusion_mat_', image_shape=(48,48), _show=False):
+    test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
+    test_features = np.array(test_features) / 255
+    test_features = tf.reshape(test_features, (-1, image_shape[0], image_shape[1], 1))
+    test_targets = np.array(test_targets)
+    
+    plotConfusionMatrix(model, test_features, test_targets, name, image_shape, _show)
+    # plotRocCurve(model, test_features, test_targets, name, image_shape, _show)
+
+ 
 def solution1(train_images, test_images):
     # train
     classifier = getRandomForestClassifier(train_images)
@@ -249,23 +304,33 @@ def solution2(train_images, test_images):
 
 def solution3(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/500EpochTestModel.keras', datasetDividor=1.25,epochs=1000,useTensorBoard=True)
+    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/500EpochTestModel.keras', datasetDividor=2,epochs=0,useTensorBoard=True,showPlot=False)
 
     # predict
-    setPredictionsOnImages(classifier, test_images, usingCNN=True)
+    # setPredictionsOnImages(classifier, test_images, usingCNN=True)
+
+    # evaluate model
+    evaluateModel(classifier, test_images, _show=True)
 
     # showImages(test_images, _showPredictedEmotion=True)
-    writeImages(test_images, _showPredictedEmotion=True)
+    # writeImages(test_images, _showPredictedEmotion=True)
 
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv")
-    test_images = readImagesFromCsv("resources/test.csv", max_n=100)
+    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
+    images = readImagesFromCsv("resources/icml_face_data.csv")
 
+    test_images = []
+    for image in images:
+        if image.usage == 'PrivateTest' or image.usage == 'PublicTest':
+            test_images.append(image)
+    
     # solution1(train_images, test_images)
     # solution2(train_images, test_images)
     solution3(train_images, test_images)
+
+    
 
     sys.exit(0)
 
