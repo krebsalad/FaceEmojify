@@ -227,12 +227,38 @@ def setPredictionsOnImages(_classifier, _images, usingCNN=False, image_shape=(48
         image.p_emotion = p
 
 
- # def plotRocCurve(model, test_features, test_targets, name, image_shape, _show):
-    # from sklearn.metrics import roc_curve, auc
+def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_shape=(48, 48), numOfClasses=7, _show=False):
+    from sklearn.metrics import roc_curve, auc
+    from sklearn.preprocessing import label_binarize
+    from scipy.optimize import curve_fit
 
-    # predictions = model.predict(test_features)
-    # fpr_keras, tpr_keras, thresholds_keras = roc_curve(test_targets.ravel(), predictions.ravel())
+    predictions = model.predict(test_features)
+    test_targets_bin = label_binarize(test_targets, classes=[0,1,2,3,4,5,6])
 
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(0, numOfClasses):
+        fpr[i], tpr[i], _ = roc_curve(test_targets_bin[:,i], predictions[:,i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+             for i in range(numOfClasses)]
+
+    for i in range(0, numOfClasses):
+        plt.plot(fpr[i], tpr[i], color=colors[i], lw=2, label='ROC class '+str(i)+' w area = '+str(roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="lower right")
+
+    fig = plt.gcf()
+    if _show:
+        plt.show()
+    save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+    print("saving roc curve figure as", save_path)
+    fig.savefig(save_path)
 
 def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), _show=False):
     import seaborn as sns
@@ -265,21 +291,22 @@ def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+
+    fig = plt.gcf()
     if _show:
         plt.show()
     save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving conf mat figures as", save_path)
-    plt.savefig(save_path)
+    fig.savefig(save_path)
 
-def evaluateModel(model, test_images, name='confusion_mat_', image_shape=(48,48), _show=False):
+def evaluateModel(model, test_images, image_shape=(48,48), _show=False):
     test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
     test_features = np.array(test_features) / 255
     test_features = tf.reshape(test_features, (-1, image_shape[0], image_shape[1], 1))
     test_targets = np.array(test_targets)
     
-    plotConfusionMatrix(model, test_features, test_targets, name, image_shape, _show)
-    # plotRocCurve(model, test_features, test_targets, name, image_shape, _show)
-
+    plotConfusionMatrix(model, test_features, test_targets, image_shape=image_shape, _show=_show)
+    plotRocCurve(model, test_features, test_targets, image_shape=image_shape, numOfClasses=7, _show=_show)
  
 def solution1(train_images, test_images):
     # train
@@ -322,9 +349,14 @@ def main():
     images = readImagesFromCsv("resources/icml_face_data.csv")
 
     test_images = []
+    max_n = 100
+    n = 0
     for image in images:
         if image.usage == 'PrivateTest' or image.usage == 'PublicTest':
             test_images.append(image)
+            n+=1
+            if n > max_n:
+                break
     
     # solution1(train_images, test_images)
     # solution2(train_images, test_images)
