@@ -337,13 +337,13 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/500EpochTestModel.keras', datasetDividor=2,epochs=0,useTensorBoard=True,showPlot=False)
+    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel.keras', datasetDividor=1.25,epochs=1000,useTensorBoard=True,showPlot=False)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True)
 
     # evaluate model
-    evaluateModel(classifier, test_images, _show=True, usingCNN=True)
+    evaluateModel(classifier, test_images, usingCNN=True)
 
     # showImages(test_images, _showPredictedEmotion=True)
     writeImages(test_images, _showPredictedEmotion=True)
@@ -351,18 +351,13 @@ def main_CNN(train_images, test_images):
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
+    train_images = readImagesFromCsv("resources/train.csv")
     images = readImagesFromCsv("resources/icml_face_data.csv")
 
     test_images = []
-    max_n = 100
-    n = 0
     for image in images:
         if image.usage == 'PrivateTest' or image.usage == 'PublicTest':
             test_images.append(image)
-            n+=1
-            if n > max_n:
-                break
     
     main_CNN(train_images, test_images)
     sys.exit(0)
