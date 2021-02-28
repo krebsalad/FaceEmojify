@@ -194,7 +194,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
     history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
 
     plotHistory(history,epochs,show=showPlot,name='history_')
-
+    
     # save the model
     if os.path.isfile(modelSavePath):
         modelSavePath = modelSavePath.replace('.keras', '')
