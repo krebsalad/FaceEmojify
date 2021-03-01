@@ -334,7 +334,7 @@ def main_KNN(train_images, test_images):
     evaluateModel(classifier, test_images)
 
     # showImages(test_images, _showPredictedEmotion=True)
-    writeImages(test_images, _showPredictedEmotion=True)
+    writeImages(test_images, _showPredictedEmotion=True, max_n=50)
 
 def main_CNN(train_images, test_images):
     # train
@@ -347,7 +347,7 @@ def main_CNN(train_images, test_images):
     evaluateModel(classifier, test_images, usingCNN=True)
 
     # showImages(test_images, _showPredictedEmotion=True)
-    writeImages(test_images, _showPredictedEmotion=True)
+    writeImages(test_images, _showPredictedEmotion=True, max_n=50)
 
 # main prog
 def main():
