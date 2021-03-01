@@ -56,10 +56,11 @@ CNN configuration
 
 Results test3
 * 300EpochTestModel : training data was split 80% (sample) - 20% (validation)
-* 200EpochtTestModel : training data was split 80% - 20% and built on top of 300EpochTestModel
-* 250EpochtTestModel : training data was split 80% - 20% and built on top of 200EpochTestModel
-* 500EpochtTestModel : training data was split 80% - 20% and built on top of 250EpochTestModel
-* 1000EpochtTestModel : training data was split 80% - 20% and built on top of 500EpochTestModel
+* 200EpochTestModel : training data was split 80% - 20% and built on top of 300EpochTestModel
+* 250EpochTestModel : training data was split 80% - 20% and built on top of 200EpochTestModel
+* 500EpochTestModel : training data was split 80% - 20% and built on top of 250EpochTestModel
+* 1000EpochTestModel : training data was split 80% - 20% and built on top of 500EpochTestModel
+* 400EpochTestModel : training data was split 80% - 20% and built on top of 1000EpochTestModel
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
@@ -80,7 +81,7 @@ cd FaceEmojify
 
 5. Install sklearning, matplotlib, opencv, tensorflow, keras
 ```
-pip install sklearn matplotlib jupyter mlxtend opencv-python tensorflow keras
+pip install sklearn matplotlib jupyter mlxtend opencv-python tensorflow keras seaborn
 ```
 
 6. Run the code with the following

@@ -188,7 +188,7 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
     history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
     
     plotHistory(history,epochs,show=showPlot,name='history_')
-
+    
     # save the model
     if os.path.isfile(modelSavePath):
         modelSavePath = modelSavePath.replace('.keras', '')
@@ -338,13 +338,13 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/500EpochTestModel.keras', datasetDividor=2,epochs=0,useTensorBoard=True,showPlot=False)
+    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel.keras', datasetDividor=1.25,epochs=1000,useTensorBoard=True,showPlot=False)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True)
 
     # evaluate model
-    evaluateModel(classifier, test_images, _show=True, usingCNN=True)
+    evaluateModel(classifier, test_images, usingCNN=True)
 
     # showImages(test_images, _showPredictedEmotion=True)
     writeImages(test_images, _showPredictedEmotion=True)
