@@ -60,7 +60,7 @@ Results test3
 * 250EpochTestModel : training data was split 80% - 20% and built on top of 200EpochTestModel
 * 500EpochTestModel : training data was split 80% - 20% and built on top of 250EpochTestModel
 * 1000EpochTestModel : training data was split 80% - 20% and built on top of 500EpochTestModel
-* 400EpochTestModel : training data was split 80% - 20% and built on top of 1000EpochTestModel
+* 1000EpochTestModel2 : training data was split 80% - 20% and built on top of 1000EpochTestModel
 
 # Installation
 1. Install [Git](https://git-scm.com/downloads), gitbash recommended aswell, and [python](https://www.python.org/)
