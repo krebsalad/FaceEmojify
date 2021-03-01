@@ -253,6 +253,7 @@ def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_sh
     save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving roc curve figure as", save_path)
     fig.savefig(save_path)
+    plt.clf()
 
 def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), usingCNN=False, _show=False):
     import seaborn as sns
@@ -295,6 +296,7 @@ def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_
     save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving conf mat figures as", save_path)
     fig.savefig(save_path)
+    plt.clf()
 
 def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False):
     test_features, test_targets, test_usage = [], [], []
