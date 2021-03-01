@@ -339,7 +339,7 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel2.keras', datasetDividor=1.25,epochs=0,useTensorBoard=True,showPlot=False)
+    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel2.keras', datasetDividor=1.25,epochs=350,useTensorBoard=True,showPlot=False)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True, max_n=50)
