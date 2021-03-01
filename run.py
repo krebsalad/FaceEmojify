@@ -198,8 +198,8 @@ def getCNNClassifier(train_images, datasetDividor=5, epochs=500, image_shape=(48
     model.save(modelSavePath)
     return model
 
-def setPredictionsOnImages(_classifier, _images, usingCNN=False, image_shape=(48,48)):
-    for image in _images:
+def setPredictionsOnImages(_classifier, _images, usingCNN=False, image_shape=(48,48), max_n=0):
+    for it, image in enumerate(_images):
         # predict 
         if not usingCNN:
             p = _classifier.predict([image.pixels])[0]
@@ -219,7 +219,8 @@ def setPredictionsOnImages(_classifier, _images, usingCNN=False, image_shape=(48
             print(image.usage, "img", image.id, "predicted:", p, res)    
         
         image.p_emotion = p
-
+        if(max_n != 0 and it > max_n-1):
+            break
 
 def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_shape=(48, 48), numOfClasses=7, _show=False):
     from sklearn.metrics import roc_curve, auc
@@ -328,7 +329,7 @@ def main_KNN(train_images, test_images):
     classifier = getKNeighborsClassifier(train_images)
 
     # predict
-    setPredictionsOnImages(classifier, test_images)
+    setPredictionsOnImages(classifier, test_images, max_n=50)
 
     # evaluate
     evaluateModel(classifier, test_images)
@@ -338,10 +339,10 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel.keras', datasetDividor=1.25,epochs=1000,useTensorBoard=True,showPlot=False)
+    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel2.keras', datasetDividor=1.25,epochs=0,useTensorBoard=True,showPlot=False)
 
     # predict
-    setPredictionsOnImages(classifier, test_images, usingCNN=True)
+    setPredictionsOnImages(classifier, test_images, usingCNN=True, max_n=50)
 
     # evaluate model
     evaluateModel(classifier, test_images, usingCNN=True)
