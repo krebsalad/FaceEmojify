@@ -253,6 +253,7 @@ def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_sh
     save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving roc curve figure as", save_path)
     fig.savefig(save_path)
+    plt.clf()
 
 def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), usingCNN=False, _show=False):
     import seaborn as sns
@@ -295,6 +296,7 @@ def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_
     save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
     print("saving conf mat figures as", save_path)
     fig.savefig(save_path)
+    plt.clf()
 
 def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False):
     test_features, test_targets, test_usage = [], [], []
@@ -323,7 +325,6 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
 
 def main_KNN(train_images, test_images):
     # train
-    image_shape= (48,48)
     classifier = getKNeighborsClassifier(train_images)
 
     # predict
@@ -333,7 +334,7 @@ def main_KNN(train_images, test_images):
     evaluateModel(classifier, test_images)
 
     # showImages(test_images, _showPredictedEmotion=True)
-    writeImages(test_images, _showPredictedEmotion=True)
+    writeImages(test_images, _showPredictedEmotion=True, max_n=50)
 
 def main_CNN(train_images, test_images):
     # train
@@ -346,7 +347,7 @@ def main_CNN(train_images, test_images):
     evaluateModel(classifier, test_images, usingCNN=True)
 
     # showImages(test_images, _showPredictedEmotion=True)
-    writeImages(test_images, _showPredictedEmotion=True)
+    writeImages(test_images, _showPredictedEmotion=True, max_n=50)
 
 # main prog
 def main():
