@@ -53,13 +53,14 @@ def getRandomForestClassifier(train_instances):
 
 def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=False, _num_show_img=3):
     from keras.models import Model
+    if not _show:
+        return
+
     layer_outputs = [layer.output for layer in model.layers[:12]]
     activation_model = Model(inputs=model.input, outputs=layer_outputs) # Creates a model that will return these outputs, given the model input
     if len(train_images) > 2:
         indecies = random.sample(range(0, len(train_images)), _num_show_img)
         imgs = [train_images[i] for i in indecies]
-        if not _show:
-            return
         for img in imgs:
             temp = [img.getCvMat().copy()]
             temp = np.array(temp) / 255
@@ -339,7 +340,7 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images):
     # train
-    classifier = getCNNClassifier(train_images, loadModelPath='models/test3/1000EpochTestModel2.keras', datasetDividor=1.25,epochs=350,useTensorBoard=True,showPlot=False)
+    classifier = getCNNClassifier(train_images, datasetDividor=1.25, loadModelPath='models/test4/2000EpochTestModel.keras', epochs=2000,useTensorBoard=True,showPlot=False)
 
     # predict
     setPredictionsOnImages(classifier, test_images, usingCNN=True, max_n=50)
@@ -358,7 +359,7 @@ def main():
 
     test_images = []
     for image in images:
-        if image.usage == 'PrivateTest' or image.usage == 'PublicTest':
+        if image.usage == 'PrivateTest':
             test_images.append(image)
     
     main_CNN(train_images, test_images)
