@@ -222,7 +222,7 @@ def setPredictionsOnImages(_classifier, _images, usingCNN=False, image_shape=(48
         if(max_n != 0 and it > max_n-1):
             break
 
-def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_shape=(48, 48), numOfClasses=7, _show=False):
+def plotRocCurve(model, test_features, test_targets, name='roc_curve_', numOfClasses=7, _show=False):
     from sklearn.metrics import roc_curve, auc
     from sklearn.preprocessing import label_binarize
     from scipy.optimize import curve_fit
@@ -256,7 +256,7 @@ def plotRocCurve(model, test_features, test_targets, name='roc_curve_', image_sh
     fig.savefig(save_path)
     plt.clf()
 
-def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', image_shape=(48,48), usingCNN=False, _show=False):
+def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', usingCNN=False, _show=False):
     import seaborn as sns
     
     # confisuion matrix
@@ -299,6 +299,40 @@ def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_
     fig.savefig(save_path)
     plt.clf()
 
+def plotPresionPlot(model, test_features, test_targets, name='presion_plot_', numOfClasses=7, _show=False):
+    from sklearn.metrics import precision_recall_curve, auc  
+    from sklearn.preprocessing import label_binarize
+    
+    predictions = model.predict(test_features)
+    
+    test_targets_bin = label_binarize(test_targets, classes=[0,1,2,3,4,5,6])
+
+    recall = dict()
+    precision = dict()
+    thresholds = dict()
+    pres_auc = dict()
+    for i in range(0, numOfClasses):
+        precision[i], recall[i], thresholds[i] = precision_recall_curve(test_targets_bin[:,i], predictions[:,i])
+        pres_auc[i] = auc(recall[i], precision[i])
+
+    colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+            for i in range(numOfClasses)]
+
+    for i in range(0, numOfClasses):
+        plt.plot(recall[i], precision[i], color=colors[i], lw=1, marker='.', label='Logistic class' +str(i)+' w area = '+str(pres_auc[i]))
+
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend(loc="lower right")
+
+    fig = plt.gcf()
+    if _show:
+        plt.show()
+    save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+    print("saving precision plot as", save_path)
+    fig.savefig(save_path)
+    plt.clf()
+
 def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False):
     test_features, test_targets, test_usage = [], [], []
 
@@ -313,7 +347,8 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         results = model.evaluate(test_features, test_targets)
         print(results)
 
-        plotRocCurve(model, test_features, test_targets, image_shape=image_shape, numOfClasses=7, _show=_show)
+        plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show)
+        plotPresionPlot(model, test_features, test_targets, _show=_show)
 
     else:
         test_features, test_targets, test_usage = getImagesAsDataLists(test_images)
@@ -321,7 +356,7 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         score = model.score(test_features, test_targets)
         print("Classifier score:", str(score))
 
-    plotConfusionMatrix(model, test_features, test_targets, image_shape=image_shape, _show=_show, usingCNN=usingCNN)
+    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN)
         
 
 def main_KNN(train_images, test_images):
