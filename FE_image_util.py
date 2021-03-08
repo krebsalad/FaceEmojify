@@ -185,49 +185,6 @@ def writeImages(_images, max_n=0, _showPredictedEmotion=False):
             cv2.imwrite("images/image_" + str(i) + ".jpg", img.getCvMat())
 
 
-# evaluation util
-def plotImagesClasses(_images, show=False, name='figure1_', _classRange=7):
-    classCount = [0] * _classRange
-    for img in _images:
-        if img.emotion != -1:             
-            classCount[img.emotion] += 1
-    print("class count ", classCount)
-    plt.bar(range(len(classCount)), classCount)
-    save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
-    print("saving classes figures as", save_path)
-    plt.savefig(save_path)
-    if show:
-        plt.show()
-    plt.clf()
-    return True
 
-def plotHistory(history,epochs,show=False,name='figure2_'):
-    acc = history.history['accuracy']
-    val_acc = history.history['val_accuracy']
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-
-    epochs_range = range(epochs)
-
-    plt.figure(figsize=(15, 15))
-    plt.subplot(2, 2, 1)
-    plt.plot(epochs_range, acc, label='Training Accuracy')
-    plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-    plt.legend(loc='lower right')
-    plt.title('Training and Validation Accuracy')
-
-    plt.subplot(2, 2, 2)
-    plt.plot(epochs_range, loss, label='Training Loss')
-    plt.plot(epochs_range, val_loss, label='Validation Loss')
-    plt.legend(loc='upper right')
-    plt.title('Training and Validation Loss')
-
-    save_path = 'images/' + name + datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
-    print("saving classes figures as", save_path)
-    plt.savefig(save_path)
-    if show:
-        plt.show()
-    plt.clf()
-    return True
 
 
