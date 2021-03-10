@@ -10,22 +10,62 @@ plt_lock = threading.Lock()
 
 # for general use
 def splitInstancesForTraining(train_instances, randomize=True, dividor=4):
-    # get random indecies
-    sample_indecies = []
-    if randomize:
-        sample_indecies = random.sample(range(len(train_instances)), int(len(train_instances)/dividor))
-    else:
-        sample_indecies = range(int(len(train_instances)/dividor))
 
-    validation_indecies = [i for i in range(len(train_instances)) if i not in sample_indecies]
-    
-    # set the random images
+    print("length of objects:")
+    print(len(train_instances))
+
+    emote_0 = []
+    emote_1 = []
+    emote_2 = []
+    emote_3 = []
+    emote_4 = []
+    emote_5 = []
+    emote_6 = []
+
+    for i in range(len(train_instances)):
+        if train_instances[i].emotion == 0:
+            emote_0.append(train_instances[i])
+        elif train_instances[i].emotion == 1:
+            emote_1.append(train_instances[i])
+        elif train_instances[i].emotion == 2:
+            emote_2.append(train_instances[i])
+        elif train_instances[i].emotion == 3:
+            emote_3.append(train_instances[i])
+        elif train_instances[i].emotion == 4:
+            emote_4.append(train_instances[i])
+        elif train_instances[i].emotion == 5:
+            emote_5.append(train_instances[i])
+        elif train_instances[i].emotion == 6:
+            emote_6.append(train_instances[i])
+
+    print(len(emote_0), len(emote_1), len(emote_2), len(emote_3), len(emote_4), len(emote_5), len(emote_6))
+
     sample_instances = []
     validation_instances = []
-    for i in sample_indecies:
-        sample_instances.append(train_instances[i])
-    for i in validation_indecies:
-        validation_instances.append(train_instances[i])
+    # Slice first emote class 3995 total
+    sample_instances += emote_0[:2000]
+    validation_instances += emote_0[-1995:]
+    # Slice second emote class 436 total, quite low. Lets slice in half and duplicate to counter class imbalance (simple data augmentation)
+    data_aug = emote_1[:218]
+    sample_instances += [ i for i in data_aug for r in range(9) ]
+    data_aug = []
+    data_aug = emote_1[-218:]
+    validation_instances += [ i for i in data_aug for r in range(9) ]
+    # Slice third emote class 4097 total
+    sample_instances += emote_2[:2000]
+    validation_instances += emote_2[-2097:]
+    # Slice fourth emote class 7215 total
+    sample_instances += emote_3[:2000]
+    validation_instances += emote_3[-5215:]
+    # Slice fifth emote class 4830 total
+    sample_instances += emote_4[:2000]
+    validation_instances += emote_4[-2830:]
+    # Slice sixth emote class 3171 total
+    sample_instances += emote_5[:2000]
+    validation_instances += emote_5[-1171:]
+    # Slice seventh emote class 4965 total
+    sample_instances += emote_6[:2000]
+    validation_instances += emote_6[-2965:]
 
     return (sample_instances, validation_instances)
 
@@ -427,7 +467,7 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images, threading=False):
     # setup models
-    model_params = [(train_images, getLayerStack(),1.25, 10, (48,48), 'model1', None,False,True)]
+    model_params = [(train_images, getLayerStack(),1.25, 250, (48,48), 'model1', None,False,True)]
 
     # train function
     def trainCNNClassifierFuture(params):
