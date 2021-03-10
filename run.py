@@ -98,28 +98,11 @@ def getLayersDefault():
     convolutional_layers_1 = [Conv2D(32,3, kernel_initializer='he_normal', padding="same", activation="relu"),
                                 BatchNormalization(), 
                                 MaxPooling2D((2,2)), 
-                                Dropout(0.2)]
+                                Dropout(0.5)]
 
-    convolutional_layers_2 = [Conv2D(64,3, kernel_initializer='he_normal', padding="same", activation="relu"),
-                                BatchNormalization(), 
-                                MaxPooling2D((2,2)), 
-                                Dropout(0.2)]
+    dense_layers = [Flatten(), Dense(7, activation="softmax")]
 
-    convolutional_layers_3 = [Conv2D(64,3, kernel_initializer='he_normal', padding="same", activation="relu"),
-                                BatchNormalization(), 
-                                MaxPooling2D((2,2)), 
-                                Dropout(0.2)]
-
-    dense_layers = [Flatten(), 
-                        Dense(128,activation="relu"), 
-                        BatchNormalization(),
-                        Dropout(0.2), 
-                        Dense(64,activation="relu"), 
-                        BatchNormalization(), 
-                        Dropout(0.2), 
-                        Dense(7, activation="softmax")]
-
-    return preprocessing_layers + convolutional_layers_1 + convolutional_layers_2 + convolutional_layers_3 + dense_layers
+    return preprocessing_layers + convolutional_layers_1 + dense_layers
 
 # evaluation util
 def plotImagesClasses(_images, show=False, name='figure1_', _classRange=7):
@@ -168,7 +151,7 @@ def plotHistory(history,epochs,show=False,name='figure2_'):
         plt.clf()
     return True
 
-def plotRocCurve(model, test_features, test_targets, name='roc_curve_', numOfClasses=7, _show=False):
+def plotRocCurve(model, test_features, test_targets, name='figure3_', numOfClasses=7, _show=False):
     from sklearn.metrics import roc_curve, auc
     from sklearn.preprocessing import label_binarize
     from scipy.optimize import curve_fit
@@ -203,7 +186,7 @@ def plotRocCurve(model, test_features, test_targets, name='roc_curve_', numOfCla
         fig.savefig(save_path)
         plt.clf()
 
-def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_', usingCNN=False, _show=False):
+def plotConfusionMatrix(model, test_features, test_targets, name='figure4_', usingCNN=False, _show=False):
     import seaborn as sns
     
     # confisuion matrix
@@ -247,7 +230,7 @@ def plotConfusionMatrix(model, test_features, test_targets, name='confusion_mat_
         fig.savefig(save_path)
         plt.clf()
 
-def plotPresionPlot(model, test_features, test_targets, name='presion_plot_', numOfClasses=7, _show=False):
+def plotPresionPlot(model, test_features, test_targets, name='figure5_', numOfClasses=7, _show=False):
     from sklearn.metrics import precision_recall_curve, auc  
     from sklearn.preprocessing import label_binarize
     
@@ -286,6 +269,9 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5
     from keras.models import Sequential
     from keras.optimizers import Adam, RMSprop
 
+    if not os.path.isdir('images/'+modelSaveName):
+        os.makedirs('images/'+modelSaveName)
+
     model = None
     if loadModelPath:
         if os.path.isfile(loadModelPath):
@@ -300,7 +286,7 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5
 
     if loadModelPath == None:
         # creating model 
-        print("No model given, creating new model...")
+        print("No model given, creating new model from given layers definition...")
         print("adding layers...")
         
         model = Sequential()
@@ -321,8 +307,8 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5
     # split data into sample and validation sets
     sample_images, validation_images = splitInstancesForTraining(train_images, dividor=datasetDividor)
 
-    plotImagesClasses(sample_images, show=showPlot,name='classes_train_'+modelSaveName)
-    plotImagesClasses(validation_images, show=showPlot,name='classes_validation_'+modelSaveName)
+    plotImagesClasses(sample_images, show=showPlot,name=modelSaveName+'/classes_train')
+    plotImagesClasses(validation_images, show=showPlot,name=modelSaveName+'/classes_validation')
 
     sample_features, sample_targets, sample_usage = getImagesAsCvDataLists(sample_images)
     validation_features, validation_targets, validation_usage = getImagesAsCvDataLists(validation_images)
@@ -345,14 +331,14 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5
     print("validating with n of", len(validation_features))
     callbacks = []
     if useTensorBoard:
-        log_path = 'tensorlog/' + modelSaveName + datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_path = 'tensorlog/' + modelSaveName + '/log_'+ datetime.now().strftime("%Y%m%d-%H%M%S")
         print("started logging for tensorboard at in ", log_path)
         print("run command <tensorboard --logdir tensorlog/> and go to http://localhost:6006/ to follow training in browser")
         callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=1))
 
     history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
     
-    plotHistory(history,epochs,show=showPlot,name='history_' + modelSaveName + '_')
+    plotHistory(history,epochs,show=showPlot,name=modelSaveName+'/history_')
     
     # save the model
     modelSavePath = 'models/' + modelSaveName + '.keras'
@@ -401,8 +387,8 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         results = model.evaluate(test_features, test_targets)
         print(results)
 
-        plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show, name='roc_cruve_'+name)
-        plotPresionPlot(model, test_features, test_targets, _show=_show, name='precision_plot_'+name)
+        plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show, name=name+'/roc_cruve_')
+        plotPresionPlot(model, test_features, test_targets, _show=_show, name=name+'/precision_plot_')
 
     else:
         test_features, test_targets, test_usage = getImagesAsDataLists(test_images)
@@ -410,7 +396,7 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         score = model.score(test_features, test_targets)
         print("Classifier score:", str(score))
 
-    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name='confusion_mat_'+name)
+    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_')
         
 
 def main_KNN(train_images, test_images):

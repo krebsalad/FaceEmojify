@@ -173,16 +173,16 @@ def showImages(_images, max_n=0, _showPredictedEmotion=False):
         if key == ord('\x1b'):
             break
 
-def writeImages(_images, max_n=0, _showPredictedEmotion=False):
+def writeImages(_images, max_n=0, _showPredictedEmotion=False, name='model1'):
     print("writing images...")
     for i, img in enumerate(_images):
         if(max_n != 0 and i > max_n-1):
             break
 
         if _showPredictedEmotion:
-            cv2.imwrite("images/image_" + str(i) + ".jpg", addEmotionToImage(img, img.p_emotion))
+            cv2.imwrite("images/"+name+"/image_" + str(i) + ".jpg", addEmotionToImage(img, img.p_emotion))
         else:
-            cv2.imwrite("images/image_" + str(i) + ".jpg", img.getCvMat())
+            cv2.imwrite("images/"+name+"/image_" + str(i) + ".jpg", img.getCvMat())
 
 
 

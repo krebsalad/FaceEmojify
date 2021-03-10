@@ -142,4 +142,5 @@ images/conf*
 images/roc*
 images/pre*
 models/mod*
+images/mod*
 tensorlog
