@@ -278,7 +278,7 @@ def trainKNNClassifier(train_instances, modelName="model_knn", currentFoldIndex=
     classifier.fit(sample_features, sample_targets)
     return classifier
 
-def trainCNNClassifier(train_images, layers=getLayersDefault(), currentFoldIndex=0, n_folds=5, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False):
+def trainCNNClassifier(train_images, layers=getLayerStack(), currentFoldIndex=0, n_folds=5, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False):
     from keras.backend import clear_session as resetTraining
     from keras.models import Sequential
     from keras.optimizers import Adam, RMSprop
@@ -437,7 +437,7 @@ def main_CNN(train_images, test_images, threading=False, crossValidate=False, us
     # setup models
     model_params = []
 
-    model1_params = [train_images, getLayersDefault(), 0, 5, 1, (48,48), 'model1', None,False,True]
+    model1_params = [train_images, getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'), 0, 5, 200, (48,48), 'test_model', None,False,True]
     model_params.append(model1_params)
 
     # train function
@@ -471,7 +471,7 @@ def main_CNN(train_images, test_images, threading=False, crossValidate=False, us
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=1000)
+    train_images = readImagesFromCsv("resources/train.csv")
     images = readImagesFromCsv("resources/icml_face_data.csv")
 
     test_images = []
