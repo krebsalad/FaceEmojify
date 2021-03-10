@@ -44,28 +44,28 @@ def splitInstancesForTraining(train_instances, randomize=True, dividor=4):
     validation_instances = []
     # Slice first emote class 3995 total
     sample_instances += emote_0[:2000]
-    validation_instances += emote_0[-1995:]
+    validation_instances += emote_0[-500:]
     # Slice second emote class 436 total, quite low. Lets slice in half and duplicate to counter class imbalance (simple data augmentation)
     data_aug = emote_1[:218]
     sample_instances += [ i for i in data_aug for r in range(9) ]
     data_aug = []
     data_aug = emote_1[-218:]
-    validation_instances += [ i for i in data_aug for r in range(9) ]
+    validation_instances += [ i for i in data_aug for r in range(2) ]
     # Slice third emote class 4097 total
     sample_instances += emote_2[:2000]
-    validation_instances += emote_2[-2097:]
+    validation_instances += emote_2[-500:]
     # Slice fourth emote class 7215 total
     sample_instances += emote_3[:2000]
-    validation_instances += emote_3[-5215:]
+    validation_instances += emote_3[-500:]
     # Slice fifth emote class 4830 total
     sample_instances += emote_4[:2000]
-    validation_instances += emote_4[-2830:]
+    validation_instances += emote_4[-500:]
     # Slice sixth emote class 3171 total
     sample_instances += emote_5[:2000]
-    validation_instances += emote_5[-1171:]
+    validation_instances += emote_5[-500:]
     # Slice seventh emote class 4965 total
     sample_instances += emote_6[:2000]
-    validation_instances += emote_6[-2965:]
+    validation_instances += emote_6[-500:]
 
     return (sample_instances, validation_instances)
 
@@ -467,7 +467,7 @@ def main_KNN(train_images, test_images):
 
 def main_CNN(train_images, test_images, threading=False):
     # setup models
-    model_params = [(train_images, getLayerStack(),1.25, 250, (48,48), 'model1', None,False,True)]
+    model_params = [(train_images, getLayerStack(),1.25, 500, (48,48), 'model1', None,False,True)]
 
     # train function
     def trainCNNClassifierFuture(params):
