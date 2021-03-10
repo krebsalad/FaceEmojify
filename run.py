@@ -10,7 +10,6 @@ plt_lock = threading.Lock()
 
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
-
     from sklearn.model_selection import StratifiedKFold
 
     # 100 as random seed for same results
@@ -59,22 +58,40 @@ def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=Fa
                     continue
             cv2.destroyAllWindows()
 
-def getLayersDefault():
+def getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'):
+    from keras import Input
     from keras.preprocessing.image import ImageDataGenerator
-    from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization, experimental, MaxPooling2D
+    from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization, experimental, MaxPooling2D, GlobalMaxPooling2D
 
-    preprocessing_layers = [experimental.preprocessing.RandomFlip("horizontal", input_shape=(48, 48, 1)), 
-                                experimental.preprocessing.RandomRotation(0.1), 
-                                experimental.preprocessing.RandomZoom(0.1)]
-    
-    convolutional_layers_1 = [Conv2D(32,3, kernel_initializer='he_normal', padding="same", activation="relu"),
-                                BatchNormalization(), 
-                                MaxPooling2D((2,2)), 
-                                Dropout(0.5)]
+    # Normally a CNN architecture looks like the following: INPUT -> [[CONV -> RELU]*N -> POOL?]*M -> [FC -> RELU]*K -> FC
+    # For simplicity let's keep it now as INPUT -> [CONV with RELU -> POOL]*M -> FLATTEN-> [FC with RELU*K] -> FC
 
-    dense_layers = [Flatten(), Dense(7, activation="softmax")]
+    # INPUT (images 48x48x1)
+    input_layer = [Input(shape=(48, 48, 1))]
 
-    return preprocessing_layers + convolutional_layers_1 + dense_layers
+    # [CONV with RELU -> POOL] chunk loop
+    chunks = num_chunks
+    layer_stack = []
+    for x in range(chunks):
+        # CONV requires 4 hyperparameters (Number of Filters K (default=32, 64, 128, etc.), spatial extent/kernel size F (default=3), stride S (default=1), amount of zero padding P (default=valid))
+        layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu', padding=pad)]
+        # POOL (In our case, default size 2))
+        layer_stack += [MaxPooling2D(pool_size=2)]
+
+    # Flatten layer
+    flatten_layer = [Flatten()]
+
+    # FC RELU layer loop
+    fc_relu_stack = []
+    for x in reversed(range(chunks)):
+        fc_relu_stack += [Dense((32 * pow(2, x)), activation='relu')]
+
+    # Finally, last classification layer (7 because we have 7 emotion classes)
+    classification_layer = [Dense(7, activation="softmax")]
+
+    cnn_stack = input_layer + layer_stack + flatten_layer + fc_relu_stack + classification_layer
+
+    return cnn_stack
 
 # evaluation util
 def plotImagesClasses(_images, show=False, name='figure1', _classRange=7):
