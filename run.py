@@ -14,7 +14,7 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
     from sklearn.model_selection import StratifiedKFold
 
     # 100 as random seed for same results
-    skf = StratifiedKFold(n_splits=splits, random_state=100, shuffle=True)
+    skf = StratifiedKFold(n_splits=splits, random_state=None, shuffle=False)
 
     folds = [([],[])] * splits
     i = 0
@@ -262,8 +262,11 @@ def trainKNNClassifier(train_instances, modelName="model_knn", currentFoldIndex=
     return classifier
 
 def trainCNNClassifier(train_images, layers=getLayersDefault(), currentFoldIndex=0, n_folds=5, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False):
+    from keras.backend import clear_session as resetTraining
     from keras.models import Sequential
     from keras.optimizers import Adam, RMSprop
+
+    resetTraining()
 
     if not os.path.isdir('images/'+modelSaveName):
         os.makedirs('images/'+modelSaveName)
@@ -305,8 +308,7 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), currentFoldIndex
     # split data into sample and validation sets
     images_folds = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), n_folds)
 
-    sample_images = images_folds[currentFoldIndex][0]
-    validation_images = images_folds[currentFoldIndex][1]
+    sample_images, validation_images = images_folds[currentFoldIndex]
 
     plotImagesClasses(sample_images, show=showPlot,name=modelSaveName+'/classes_train_fold_'+str(currentFoldIndex))
     plotImagesClasses(validation_images, show=showPlot,name=modelSaveName+'/classes_val_fold_'+str(currentFoldIndex))
@@ -414,7 +416,7 @@ def main_KNN(train_images, test_images):
     # showImages(test_images, _showPredictedEmotion=True)
     # writeImages(test_images, _showPredictedEmotion=True, max_n=50)
 
-def main_CNN(train_images, test_images, threading=False, crossValidate=False):
+def main_CNN(train_images, test_images, threading=False, crossValidate=False, useThreading=False):
     # setup models
     model_params = []
 
@@ -423,43 +425,26 @@ def main_CNN(train_images, test_images, threading=False, crossValidate=False):
 
     # train function
     def trainCNNClassifierFuture(params):
-        print(params)
         return trainCNNClassifier(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7], params[8], params[9])
 
-    # threading (not working yet)
-    models = []
-    if threading:
-        import concurrent.futures
-        futures = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(trainCNNClassifierFuture, params) for params in model_params]
-        models = [f.result() for f in futures]
-    # sequentially (works)
-    else:
-        for params in model_params:
-            if not crossValidate:
+    # train and evaluate all models
+    scores = []
+    for p, params in enumerate(model_params):
+        if not crossValidate:
+            m = trainCNNClassifierFuture(params)
+            score = evaluateModel(m, test_images, usingCNN=True, name=model_params[p][6])
+            scores.append([score])
+        else:
+            s = []
+            for i in range(0, params[3]):
+                params[2] = i
                 m = trainCNNClassifierFuture(params)
-                models.append(m)
-            else:
-                m_list = []
-                for i in range(0, params[3]):
-                    params[2] = i
-                    m = trainCNNClassifierFuture(params)
-                    m_list.append(m)
-                models.append(m_list)
+                score = evaluateModel(m, test_images, usingCNN=True, name=model_params[p][6], fold_nr=i)
+                s.append(score)
+            scores.append(s)
     
-    # evaluate models
-    if not crossValidate:
-        for i, m in enumerate(models):
-            score = evaluateModel(m, test_images, usingCNN=True, name=model_params[i][6])        
-    else:
-        for i, m_list in enumerate(models):
-            average_score = 0
-            for i2, m in enumerate(m_list):
-                score = evaluateModel(m, test_images, usingCNN=True, name=model_params[i][6], fold_nr=i2)
-                average_score += score
-            average_score /= len(m_list)
-            print(average_score)
+    for i, s in enumerate(scores):
+        print("Score model " + str(i) + ":" + str(s) + ", average: " + str(sum(s)/len(s)))
 
     # show images
     # setPredictionsOnImages(classifier, test_images, usingCNN=True, max_n=50)
@@ -469,7 +454,7 @@ def main_CNN(train_images, test_images, threading=False, crossValidate=False):
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
+    train_images = readImagesFromCsv("resources/train.csv", max_n=1000)
     images = readImagesFromCsv("resources/icml_face_data.csv")
 
     test_images = []
