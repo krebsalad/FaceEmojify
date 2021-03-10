@@ -70,6 +70,12 @@ class Image:
         return self.mat
 
 # image specific util
+def getImagesEmotionsLists(_images):
+    emotionsList = []
+    for im in _images:
+        emotionsList.append(im.emotion)
+    return emotionsList
+
 def getImagesAsDataLists(_images):
     pixelsList = []
     emotionsList = []

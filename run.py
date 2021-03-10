@@ -9,51 +9,23 @@ import threading
 plt_lock = threading.Lock()
 
 # for general use
-def splitInstancesForTraining(train_instances, randomize=True, dividor=4):
-    # get random indecies
-    random.seed(10)
-    sample_indecies = []
-    if randomize:
-        sample_indecies = random.sample(range(len(train_instances)), int(len(train_instances)/dividor))
-    else:
-        sample_indecies = range(int(len(train_instances)/dividor))
+def splitInstancesForTraining(train_instances, train_targets, splits=5):
 
-    validation_indecies = [i for i in range(len(train_instances)) if i not in sample_indecies]
-    
-    # set the random images
-    sample_instances = []
-    validation_instances = []
-    for i in sample_indecies:
-        sample_instances.append(train_instances[i])
-    for i in validation_indecies:
-        validation_instances.append(train_instances[i])
+    from sklearn.model_selection import StratifiedKFold
 
-    return (sample_instances, validation_instances)
+    # 100 as random seed for same results
+    skf = StratifiedKFold(n_splits=splits, random_state=100, shuffle=True)
 
-# classifier
-def trainClassifier(classifier, train_instances):
-    # split data into sample and validation sets
-    sample_instances, validation_instances = splitInstancesForTraining(train_instances)
+    folds = [([],[])] * splits
+    i = 0
+    for sample_indecies, validation_indecies in skf.split(train_instances, train_targets):
+        for s in sample_indecies:
+            folds[i][0].append(train_instances[s])
+        for v in validation_indecies:
+            folds[i][1].append(train_instances[v])
+        i+=1
 
-    sample_features, sample_targets, sample_usage = getImagesAsDataLists(sample_instances)
-    validation_features, validation_targets, validation_usage = getImagesAsDataLists(validation_instances)
-    
-    # train
-    print("Training with n of", len(sample_features))
-    classifier.fit(sample_features, sample_targets)
-    return classifier
-
-def getKNeighborsClassifier(train_instances):
-    from sklearn import neighbors
-    # setup classifier
-    classifier = neighbors.KNeighborsClassifier(n_neighbors=3)
-    return trainClassifier(classifier, train_instances)
-
-def getRandomForestClassifier(train_instances):
-    from sklearn import ensemble
-    # setup classifier
-    classifier = ensemble.RandomForestClassifier()
-    return trainClassifier(classifier, train_instances)
+    return folds
 
 def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=False, _num_show_img=3):
     from keras.models import Model
@@ -105,7 +77,7 @@ def getLayersDefault():
     return preprocessing_layers + convolutional_layers_1 + dense_layers
 
 # evaluation util
-def plotImagesClasses(_images, show=False, name='figure1_', _classRange=7):
+def plotImagesClasses(_images, show=False, name='figure1', _classRange=7):
     classCount = [0] * _classRange
     for img in _images:
         if img.emotion != -1:             
@@ -113,7 +85,7 @@ def plotImagesClasses(_images, show=False, name='figure1_', _classRange=7):
     print("class count ", classCount)
     with plt_lock:
         plt.bar(range(len(classCount)), classCount)
-        save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+        save_path = 'images/'+ name + '.png'
         print("saving classes figures as", save_path)
         plt.savefig(save_path)
         if show:
@@ -121,7 +93,7 @@ def plotImagesClasses(_images, show=False, name='figure1_', _classRange=7):
         plt.clf()
     return True
 
-def plotHistory(history,epochs,show=False,name='figure2_'):
+def plotHistory(history,epochs,show=False,name='figure2'):
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
     loss = history.history['loss']
@@ -143,7 +115,7 @@ def plotHistory(history,epochs,show=False,name='figure2_'):
         plt.legend(loc='upper right')
         plt.title('Training and Validation Loss')
 
-        save_path = 'images/' + name + datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+        save_path = 'images/' + name + '.png'
         print("saving classes figures as", save_path)
         plt.savefig(save_path)
         if show:
@@ -151,7 +123,7 @@ def plotHistory(history,epochs,show=False,name='figure2_'):
         plt.clf()
     return True
 
-def plotRocCurve(model, test_features, test_targets, name='figure3_', numOfClasses=7, _show=False):
+def plotRocCurve(model, test_features, test_targets, name='figure3', numOfClasses=7, _show=False):
     from sklearn.metrics import roc_curve, auc
     from sklearn.preprocessing import label_binarize
     from scipy.optimize import curve_fit
@@ -181,12 +153,12 @@ def plotRocCurve(model, test_features, test_targets, name='figure3_', numOfClass
         fig = plt.gcf()
         if _show:
             plt.show()
-        save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+        save_path = 'images/'+ name + '.png'
         print("saving roc curve figure as", save_path)
         fig.savefig(save_path)
         plt.clf()
 
-def plotConfusionMatrix(model, test_features, test_targets, name='figure4_', usingCNN=False, _show=False):
+def plotConfusionMatrix(model, test_features, test_targets, name='figure4', usingCNN=False, _show=False):
     import seaborn as sns
     
     # confisuion matrix
@@ -225,12 +197,12 @@ def plotConfusionMatrix(model, test_features, test_targets, name='figure4_', usi
         fig = plt.gcf()
         if _show:
             plt.show()
-        save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+        save_path = 'images/'+ name + '.png'
         print("saving conf mat figures as", save_path)
         fig.savefig(save_path)
         plt.clf()
 
-def plotPresionPlot(model, test_features, test_targets, name='figure5_', numOfClasses=7, _show=False):
+def plotPresionPlot(model, test_features, test_targets, name='figure5', numOfClasses=7, _show=False):
     from sklearn.metrics import precision_recall_curve, auc  
     from sklearn.preprocessing import label_binarize
     
@@ -260,17 +232,43 @@ def plotPresionPlot(model, test_features, test_targets, name='figure5_', numOfCl
         fig = plt.gcf()
         if _show:
             plt.show()
-        save_path = 'images/'+ name + ''+ datetime.now().strftime("%Y%m%d-%H%M%S") + '.png'
+        save_path = 'images/'+ name + '.png'
         print("saving precision plot as", save_path)
         fig.savefig(save_path)
         plt.clf()
 
-def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False):
+# classifier
+def trainKNNClassifier(train_instances, modelName="model_knn", currentFoldIndex=0, n_folds=5,showPlot=False):
+    from sklearn import neighbors
+    # setup classifier
+    classifier = neighbors.KNeighborsClassifier(n_neighbors=3)
+
+    if not os.path.isdir('images/'+modelName):
+        os.makedirs('images/'+modelName)
+
+    # split data into sample and validation sets
+    folds = splitInstancesForTraining(train_instances, getImagesEmotionsLists(train_instances), splits=n_folds) 
+    sample_instances = folds[0][0]
+    # validation_instances = folds[0][1]
+
+    plotImagesClasses(sample_instances, show=showPlot,name=modelName+'/classes_train_fold_'+str(currentFoldIndex))
+
+    sample_features, sample_targets, sample_usage = getImagesAsDataLists(sample_instances)
+    # validation_features, validation_targets, validation_usage = getImagesAsDataLists(validation_instances)
+    
+    # train
+    print("Training with n of", len(sample_features))
+    classifier.fit(sample_features, sample_targets)
+    return classifier
+
+def trainCNNClassifier(train_images, layers=getLayersDefault(), currentFoldIndex=0, n_folds=5, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False):
     from keras.models import Sequential
     from keras.optimizers import Adam, RMSprop
 
     if not os.path.isdir('images/'+modelSaveName):
         os.makedirs('images/'+modelSaveName)
+    if not os.path.isdir('models/'+modelSaveName):
+        os.makedirs('models/'+modelSaveName)
 
     model = None
     if loadModelPath:
@@ -305,13 +303,16 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5
         return model
 
     # split data into sample and validation sets
-    sample_images, validation_images = splitInstancesForTraining(train_images, dividor=datasetDividor)
+    images_folds = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), n_folds)
 
-    plotImagesClasses(sample_images, show=showPlot,name=modelSaveName+'/classes_train')
-    plotImagesClasses(validation_images, show=showPlot,name=modelSaveName+'/classes_validation')
+    sample_images = images_folds[currentFoldIndex][0]
+    validation_images = images_folds[currentFoldIndex][1]
 
-    sample_features, sample_targets, sample_usage = getImagesAsCvDataLists(sample_images)
-    validation_features, validation_targets, validation_usage = getImagesAsCvDataLists(validation_images)
+    plotImagesClasses(sample_images, show=showPlot,name=modelSaveName+'/classes_train_fold_'+str(currentFoldIndex))
+    plotImagesClasses(validation_images, show=showPlot,name=modelSaveName+'/classes_val_fold_'+str(currentFoldIndex))
+
+    sample_features, sample_targets, _ = getImagesAsCvDataLists(sample_images)
+    validation_features, validation_targets, _ = getImagesAsCvDataLists(validation_images)
 
     sample_features = np.array(sample_features) / 255
     validation_features = np.array(validation_features) / 255
@@ -338,10 +339,10 @@ def trainCNNClassifier(train_images, layers=getLayersDefault(), datasetDividor=5
 
     history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
     
-    plotHistory(history,epochs,show=showPlot,name=modelSaveName+'/history_')
+    plotHistory(history,epochs,show=showPlot,name=modelSaveName+'/history_fold_'+str(currentFoldIndex))
     
     # save the model
-    modelSavePath = 'models/' + modelSaveName + '.keras'
+    modelSavePath = 'models/' + modelSaveName + '/' + 'result_' + str(currentFoldIndex) + '.keras'
     if os.path.isfile(modelSavePath):
         modelSavePath = modelSavePath.replace('.keras', '')
         modelSavePath += datetime.now().strftime("%Y%m%d-%H%M%S") + '.keras'
@@ -374,8 +375,9 @@ def setPredictionsOnImages(_classifier, _images, model_name='model', usingCNN=Fa
         if(max_n != 0 and it > max_n-1):
             break
 
-def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False, name='model'):
+def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False, name='model', fold_nr=0):
     test_features, test_targets, test_usage = [], [], []
+    score = 0
 
     if usingCNN:
         test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
@@ -385,10 +387,11 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
    
         print("Testing with n of", len(test_features))
         results = model.evaluate(test_features, test_targets)
+        score = results[1]
         print(results)
 
-        plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show, name=name+'/roc_cruve_')
-        plotPresionPlot(model, test_features, test_targets, _show=_show, name=name+'/precision_plot_')
+        plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show, name=name+'/roc_cruve_fold_'+str(fold_nr))
+        plotPresionPlot(model, test_features, test_targets, _show=_show, name=name+'/precision_plot_fold_'+str(fold_nr))
 
     else:
         test_features, test_targets, test_usage = getImagesAsDataLists(test_images)
@@ -396,28 +399,32 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         score = model.score(test_features, test_targets)
         print("Classifier score:", str(score))
 
-    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_')
-        
+    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr))
+    return score
 
 def main_KNN(train_images, test_images):
     # train
-    classifier = getKNeighborsClassifier(train_images)
+    classifier = trainKNNClassifier(train_images, 'modelKNN')
 
     # evaluate
-    evaluateModel(classifier, test_images)
+    evaluateModel(classifier, test_images, name='modelKNN')
 
     # show images
     # setPredictionsOnImages(classifier, test_images, max_n=50)
     # showImages(test_images, _showPredictedEmotion=True)
     # writeImages(test_images, _showPredictedEmotion=True, max_n=50)
 
-def main_CNN(train_images, test_images, threading=False):
+def main_CNN(train_images, test_images, threading=False, crossValidate=False):
     # setup models
-    model_params = [(train_images, getLayersDefault(),1.25, 1, (48,48), 'model1', None,False,True)]
+    model_params = []
+
+    model1_params = [train_images, getLayersDefault(), 0, 5, 1, (48,48), 'model1', None,False,True]
+    model_params.append(model1_params)
 
     # train function
     def trainCNNClassifierFuture(params):
-        return trainCNNClassifier(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7], params[8])
+        print(params)
+        return trainCNNClassifier(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7], params[8], params[9])
 
     # threading (not working yet)
     models = []
@@ -430,12 +437,29 @@ def main_CNN(train_images, test_images, threading=False):
     # sequentially (works)
     else:
         for params in model_params:
-            m = trainCNNClassifierFuture(params)
-            models.append(m)
+            if not crossValidate:
+                m = trainCNNClassifierFuture(params)
+                models.append(m)
+            else:
+                m_list = []
+                for i in range(0, params[3]):
+                    params[2] = i
+                    m = trainCNNClassifierFuture(params)
+                    m_list.append(m)
+                models.append(m_list)
     
     # evaluate models
-    for i, m in enumerate(models):
-        evaluateModel(m, test_images, usingCNN=True, name=model_params[i][5])
+    if not crossValidate:
+        for i, m in enumerate(models):
+            score = evaluateModel(m, test_images, usingCNN=True, name=model_params[i][6])        
+    else:
+        for i, m_list in enumerate(models):
+            average_score = 0
+            for i2, m in enumerate(m_list):
+                score = evaluateModel(m, test_images, usingCNN=True, name=model_params[i][6], fold_nr=i2)
+                average_score += score
+            average_score /= len(m_list)
+            print(average_score)
 
     # show images
     # setPredictionsOnImages(classifier, test_images, usingCNN=True, max_n=50)
@@ -445,7 +469,7 @@ def main_CNN(train_images, test_images, threading=False):
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv")
+    train_images = readImagesFromCsv("resources/train.csv", max_n=100)
     images = readImagesFromCsv("resources/icml_face_data.csv")
 
     test_images = []
@@ -453,7 +477,7 @@ def main():
         if image.usage == 'PrivateTest':
             test_images.append(image)
     
-    main_CNN(train_images, test_images)
+    main_CNN(train_images, test_images, crossValidate=True)
     sys.exit(0)
 
 if __name__ == "__main__":
