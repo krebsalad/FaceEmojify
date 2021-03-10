@@ -86,41 +86,38 @@ def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=Fa
                     continue
             cv2.destroyAllWindows()
 
-def getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, padding = 'valid'):
+def getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'):
     from keras import Input
     from keras.preprocessing.image import ImageDataGenerator
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization, experimental, MaxPooling2D, GlobalMaxPooling2D
 
     # Normally a CNN architecture looks like the following: INPUT -> [[CONV -> RELU]*N -> POOL?]*M -> [FC -> RELU]*K -> FC
-    # For simplicity let's keep it now as INPUT -> [CONV -> RELU -> POOL]*M -> FLATTEN-> FC
+    # For simplicity let's keep it now as INPUT -> [CONV with RELU -> POOL]*M -> FLATTEN-> [FC with RELU*K] -> FC
 
     # INPUT (images 48x48x1)
     input_layer = [Input(shape=(48, 48, 1))]
 
+    # [CONV with RELU -> POOL] chunk loop
     chunks = num_chunks
     layer_stack = []
-    # Default chunk
-    # CONV requires 4 hyperparameters (Number of Filters K (default=32, 64, 128, etc.), spatial extent/kernel size F (default=3), stride S (default=1), amount of zero padding P (default=valid))
-    layer_stack += [Conv2D(filters=32, kernel_size=kern_size, strides=stride)]
-    # RELU (same parameters as CONV, but now with 'relu' activation)
-    layer_stack += [Conv2D(filters=32, kernel_size=kern_size, strides=stride, activation='relu')]
-    # POOL (In our case, default size 2))
-    layer_stack += [MaxPooling2D(pool_size=2)]
-    # Chunk loop
-    for x in range(1, chunks):
-        layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride)]
-        layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu')]
+    for x in range(chunks):
+        # CONV requires 4 hyperparameters (Number of Filters K (default=32, 64, 128, etc.), spatial extent/kernel size F (default=3), stride S (default=1), amount of zero padding P (default=valid))
+        layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu', padding=pad)]
+        # POOL (In our case, default size 2))
         layer_stack += [MaxPooling2D(pool_size=2)]
 
-    # Add Global Max Pooling (to calc global from the multiple MaxPool layers from multiple chunks)
+    # Flatten layer
     flatten_layer = [Flatten()]
 
-    # TODO optional, add FC RELU layer loop as hyperparameter. Still need to figure out what logical is for layer size.. Example: Dense(64, activation='relu')
+    # FC RELU layer loop
+    fc_relu_stack = []
+    for x in reversed(range(chunks)):
+        fc_relu_stack += [Dense((32 * pow(2, x)), activation='relu')]
 
-    # Finally, add classification layer (7 because we have 7 emotion classes)
+    # Finally, last classification layer (7 because we have 7 emotion classes)
     classification_layer = [Dense(7, activation="softmax")]
 
-    cnn_stack = input_layer + layer_stack + flatten_layer + classification_layer
+    cnn_stack = input_layer + layer_stack + flatten_layer + fc_relu_stack + classification_layer
 
     return cnn_stack
 
