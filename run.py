@@ -370,7 +370,7 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
         log_path = 'tensorlog/' + modelSaveName + '/log_'+ datetime.now().strftime("%Y%m%d-%H%M%S")
         print("started logging for tensorboard at in ", log_path)
         print("run command <tensorboard --logdir tensorlog/> and go to http://localhost:6006/ to follow training in browser")
-        callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=1))
+        callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=0))
 
     history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
     
@@ -456,6 +456,7 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
     # first parameter is left empty as train_images need to be split which depends on crossvalidation or not
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, showPlot, useTensorBoard
     model1_params = [([],[]), getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'), 0, 100, (48,48), 'test_model', None,False,True]
+    # model2_params = [([],[]), getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'), 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras',False,True]
     model_params.append(model1_params)
 
     # train and evaluate all models
@@ -473,8 +474,9 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
         # cross validation
         else:
             s = []
+            image_folds = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), 5)
             for i in range(0, 5):
-                params[0] = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), 5)[i]  # split here so that not all folds are in memory
+                params[0] = image_folds[i]
                 params[2] = i
 
                 model = trainCNNClassifier(*params)
