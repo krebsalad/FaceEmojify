@@ -66,7 +66,7 @@ def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=Fa
                     continue
             cv2.destroyAllWindows()
 
-def getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'):
+def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1):
     from keras import Input
     from keras.preprocessing.image import ImageDataGenerator
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization, experimental, MaxPooling2D, GlobalMaxPooling2D
@@ -82,17 +82,20 @@ def getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'):
     layer_stack = []
     for x in range(chunks):
         # CONV requires 4 hyperparameters (Number of Filters K (default=32, 64, 128, etc.), spatial extent/kernel size F (default=3), stride S (default=1), amount of zero padding P (default=valid))
-        layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu', padding=pad)]
+        for i in range(num_conv2d_layers):
+            layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu', padding=pad)]
         # POOL (In our case, default size 2))
         layer_stack += [MaxPooling2D(pool_size=2)]
+        layer_stack += [Dropout(0.25)]
 
     # Flatten layer
     flatten_layer = [Flatten()]
 
     # FC RELU layer loop
     fc_relu_stack = []
-    for x in reversed(range(chunks)):
-        fc_relu_stack += [Dense((32 * pow(2, x)), activation='relu')]
+    for x in range(num_fc_layers):
+        fc_relu_stack += [Dense((32 * pow(2, (num_chunks - x))), activation='relu')]
+        fc_relu_stack += [Dropout(0.5)]
 
     # Finally, last classification layer (7 because we have 7 emotion classes)
     classification_layer = [Dense(7, activation="softmax")]
@@ -455,8 +458,8 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
 
     # first parameter is left empty as train_images need to be split which depends on crossvalidation or not
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, showPlot, useTensorBoard
-    model1_params = [([],[]), getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'), 0, 100, (48,48), 'test_model', None,False,True]
-    # model2_params = [([],[]), getLayerStack(num_chunks = 3, kern_size = 3, stride = 1, pad = 'valid'), 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras',False,True]
+    model1_params = [([],[]), getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'test_model', None,False,True]
+    # model2_params = [([],[]), [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras',False,True]
     model_params.append(model1_params)
 
     # train and evaluate all models
