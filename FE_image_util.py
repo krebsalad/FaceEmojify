@@ -5,6 +5,32 @@ import os
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+
+# python util
+log_file = 'log.txt'
+logFile = open(log_file, "w+")
+logFile.close()
+def printLog(log_txt):
+    print(log_txt)
+    with open(log_file, "a") as logFile:
+        logFile.write(log_txt + '\n')
+
+def release_list(a):
+   del a[:]
+   del a
+
+def listFind(l, i):
+    for i2 in l:
+        if i == i2:
+            return True
+    return False 
+
+def getModelSummaryAsString(model):
+    str_list = []
+    model.summary(print_fn=lambda c: str_list.append(c))
+    model_summary_str = "\n".join(str_list)
+    return model_summary_str
+
 # image class for conversion to mat
 class Image:
     def __init__(self, _id, _pixels,_emotion=-1,_usage="Training"):
@@ -104,15 +130,15 @@ def parseHeaders(headerList):
         dataType += h2[0]
     return dataType.lower()
 
-def readImagesFromCsv(path, max_n=0):
-    print("reading image data ", path)
+def readImagesFromCsv(path, max_n=0, usage_skip_list=[]):
+    printLog("reading image data " + path)
 
     # read data
     data_f = None
     if(os.path.isfile(path)):
         data_f = open(path)
     if (data_f == None):   
-        print("no data found")
+        printLog("no data found")
         return []
     data = data_f.readlines()
     data_f.close()
@@ -125,11 +151,11 @@ def readImagesFromCsv(path, max_n=0):
         if(i == 0):
             dataType = parseHeaders(line)
             if(dataType == ''):
-                print('no headers found')
+                printLog('no headers found')
                 break
-            print("found headers:", line, ", set as dataType:", dataType)
+            printLog("found headers: " + str(line) + ", set as dataType: " + dataType)
             continue
-
+            
         img = None
         if (dataType == 'ep'):
             img = Image(i, np.asarray(line[1].split(" "), dtype=np.uint8, order='C'), int(line[0]),"Training")
@@ -140,15 +166,18 @@ def readImagesFromCsv(path, max_n=0):
             images.append(img)
 
         elif (dataType == 'eup'):
+            if len(usage_skip_list):
+                if listFind(usage_skip_list, line[1]):
+                    continue
             img = Image(i, np.asarray(line[2].split(" "), dtype=np.uint8, order='C'), int(line[0]), _usage=line[1])
             images.append(img)
         else:
-            print("no implementation for datatype:", dataType)
+            printLog("no implementation for datatype: " + dataType)
             return []
 
         if(max_n != 0 and i > max_n-1):
             break
-    print("read data succefully: length of images ", len(images))
+    printLog("read data succefully: length of images " + str(len(images)))
     return images
 
 # opencv util functions
@@ -165,7 +194,7 @@ def addEmotionToImage(_image, _emotion):
     return np.concatenate((img, emoji_mat), axis=1)
 
 def showImages(_images, max_n=0, _showPredictedEmotion=False):
-    print("showing " + len(_images) + " images, press <esc> in the opencv window to quit")
+    printLog("showing " + len(_images) + " images, press <esc> in the opencv window to quit")
     for i, img in enumerate(_images):
         if(max_n != 0 and i > max_n-1):
             break
@@ -180,7 +209,7 @@ def showImages(_images, max_n=0, _showPredictedEmotion=False):
             break
 
 def writeImages(_images, max_n=0, _showPredictedEmotion=False, name='model1'):
-    print("writing images...")
+    printLog("writing images...")
     for i, img in enumerate(_images):
         if(max_n != 0 and i > max_n-1):
             break

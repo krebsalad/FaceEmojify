@@ -131,16 +131,10 @@ dmypy.json
 # others
 resources/*.csv
 resources/*/fer2013
-models/last*
 images/figure*
 resources/*tar.gz*
 resources/*zip*
-images/image*
-images/histo*
-images/classe*
-images/conf*
-images/roc*
-images/pre*
-models/mod*
-images/mod*
+images/*
+models/test*
 tensorlog
+log.txt
