@@ -11,6 +11,11 @@ Used to learn machine learning...
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 ```
 
+2b. Install pip
+```
+python get-pip.py
+```
+
 3. Start a terminal, clone the project and go into the directory
 ```
 cd ~/Desktop/projects/
