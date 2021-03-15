@@ -67,16 +67,18 @@ def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=Fa
                     continue
             cv2.destroyAllWindows()
 
-def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1):
+def getLayerStack(num_chunks = 1, num_conv2d_layers = 1, kern_size = 2, stride = 1, num_fc_layers = 1):
     from keras import Input
     from keras.preprocessing.image import ImageDataGenerator
     from keras.layers import Dense, Conv2D , MaxPool2D , Flatten , Dropout, BatchNormalization, experimental, MaxPooling2D, GlobalMaxPooling2D
 
     # Normally a CNN architecture looks like the following: INPUT -> [[CONV -> RELU]*N -> POOL?]*M -> [FC -> RELU]*K -> FC
-    # For simplicity let's keep it now as INPUT -> [CONV with RELU -> POOL]*M -> FLATTEN-> [FC with RELU*K] -> FC
+    # Our stack consists of: PRE-PROC -> [[CONV with RELU*N] -> POOL -> Dropout ]*M -> FLATTEN-> [FC with RELU*K] -> FC
 
-    # INPUT (images 48x48x1)
-    input_layer = [Input(shape=(48, 48, 1))]
+    # PRE-PROCESSING
+    pre_proc_stack = [experimental.preprocessing.RandomFlip("horizontal", input_shape=(48, 48, 1)), 
+                                experimental.preprocessing.RandomRotation(0.1), 
+                                experimental.preprocessing.RandomZoom(0.1)]
 
     # [CONV with RELU -> POOL] chunk loop
     chunks = num_chunks
@@ -84,7 +86,7 @@ def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride =
     for x in range(chunks):
         # CONV requires 4 hyperparameters (Number of Filters K (default=32, 64, 128, etc.), spatial extent/kernel size F (default=3), stride S (default=1), amount of zero padding P (default=valid))
         for i in range(num_conv2d_layers):
-            layer_stack += [Conv2D(filters=(32 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu', padding=pad)]
+            layer_stack += [Conv2D(filters=(16 * pow(2, x)), kernel_size=kern_size, strides=stride, activation='relu', padding='same')]
         # POOL (In our case, default size 2))
         layer_stack += [MaxPooling2D(pool_size=2)]
         layer_stack += [Dropout(0.25)]
@@ -95,13 +97,13 @@ def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride =
     # FC RELU layer loop
     fc_relu_stack = []
     for x in range(num_fc_layers):
-        fc_relu_stack += [Dense((32 * pow(2, (num_chunks - x))), activation='relu')]
+        fc_relu_stack += [Dense((16 * pow(2, (num_chunks - x))), activation='relu')]
         fc_relu_stack += [Dropout(0.5)]
 
     # Finally, last classification layer (7 because we have 7 emotion classes)
     classification_layer = [Dense(7, activation="softmax")]
 
-    cnn_stack = input_layer + layer_stack + flatten_layer + fc_relu_stack + classification_layer
+    cnn_stack = pre_proc_stack + layer_stack + flatten_layer + fc_relu_stack + classification_layer
 
     return cnn_stack
 
@@ -397,6 +399,8 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
 
     printLog("Succesfully completed training of " + modelSaveName + "_fold_" + str(fold_nr) + " in " + str(time_passed))
 
+    # Pass history to function 
+
     plotHistory(history,epochs,show=showPlot,name=modelSaveName+'/history_fold_'+str(fold_nr))
     
     # save the model
@@ -479,7 +483,7 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
 
     # first parameter is left empty as train_images need to be split which depends on crossvalidation or not
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
-    model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'test_model', None]
+    model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, num_fc_layers = 1), 0, 10, (48,48), 'test_model', None]
     model_params.append(model1_params)
 
     # load a model and only evaluate it
@@ -524,13 +528,74 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
     # showImages(eval_images, _showPredictedEmotion=True)
     # writeImages(eval_images, _showPredictedEmotion=True, max_n=50)
 
+def optimize_hyperparams(parameters, *data):
+    from keras.backend import clear_session
+    from keras.models import Sequential
+    from keras.optimizers import Adam, RMSprop
+    from sklearn.decomposition import PCA
+
+    # num_chunks = 1, num_conv2d_layers = 1, kern_size = 2, stride = 1, num_fc_layers = 1
+    num_chunks,num_conv2d_layers,kern_size,stride,num_fc_layers = parameters
+    train_images = readImagesFromCsv("resources/train.csv")
+    image_shape = (48,48)
+
+    try: 
+        clear_session()
+        model = None
+        model = Sequential()
+        print("Chosen variables:")
+        print(round(num_chunks), round(num_conv2d_layers), round(kern_size), round(stride), round(num_fc_layers))
+        layers = getLayerStack(round(num_chunks), round(num_conv2d_layers), round(kern_size), round(stride), round(num_fc_layers))
+        for l in layers:
+            model.add(l)
+        # compiling model
+        printLog("compiling model...")
+        opt = Adam(lr=0.000001)
+        model.compile(optimizer = opt , loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) , metrics = ['accuracy'])
+        print("Compiling success!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        # split data into sample and validation sets
+        sample_images, validation_images = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), 1)
+
+        sample_features, sample_targets, tmp = getImagesAsCvDataLists(sample_images)
+        validation_features, validation_targets, tmp = getImagesAsCvDataLists(validation_images)
+
+        sample_features = np.array(sample_features) / 255
+        validation_features = np.array(validation_features) / 255
+
+        sample_features = tf.reshape(sample_features, (-1, image_shape[0], image_shape[1], 1))
+        sample_targets = np.array(sample_targets)
+
+        validation_features = tf.reshape(validation_features, (-1, image_shape[0], image_shape[1], 1))
+        validation_targets = np.array(validation_targets)
+        print("Still going good!")
+        hist = model.fit(sample_features,sample_targets, epochs = 10 , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=[])
+
+        print(hist.history)
+
+        if hist.history['val_loss'][-1] < hist.history['loss'][-1] and hist.history['val_accuracy'][-1] > hist.history['accuracy'][-1]:
+            print("No overfit")
+            return hist.history['val_loss'][-1]
+        else: 
+            print("Overfit has happened")
+            return 1000
+    except: 
+        print("An error has occured")
+        return 1000
+
 # main prog
 def main():
+    from scipy.optimize import differential_evolution
     # read data
-    train_images = readImagesFromCsv("resources/train.csv")
-    eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
+    #train_images = readImagesFromCsv("resources/train.csv")
+    #eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    main_CNN(train_images, eval_images, crossValidate=True)
+    # num_chunks = 1, num_conv2d_layers = 1, kern_size = 2, stride = 1, num_fc_layers = 1
+    bounds = [(1,5), (1,5), (2,5), (1,5), (1,5)]
+
+    result = differential_evolution(optimize_hyperparams, bounds)
+    print(result)
+
+    # main_CNN(train_images, eval_images, crossValidate=False)
     sys.exit(0)
 
 if __name__ == "__main__":
