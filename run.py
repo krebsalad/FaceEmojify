@@ -450,6 +450,8 @@ def setPredictionsOnImages(_classifier, _images, model_name='model', usingCNN=Fa
 def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False, name='model', fold_nr=0):
     test_features, test_targets, test_usage = [], [], []
     score = 0
+    summarySavePath = 'models/' + name + '/' + 'summary.txt'
+
     if usingCNN:
         test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
         test_features = np.array(test_features) / 255
@@ -460,6 +462,7 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         results = model.evaluate(test_features, test_targets)
         score = results[1]
         printLog("Evaluation results:" + str(results))
+        writeToFile(summarySavePath, "Evaluation results:" + str(results) + '\n\n')
 
         plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show, name=name+'/roc_cruve_fold_'+str(fold_nr))
         plotPresionPlot(model, test_features, test_targets, _show=_show, name=name+'/precision_plot_fold_'+str(fold_nr))
@@ -468,9 +471,10 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         test_features, test_targets, test_usage = getImagesAsDataLists(test_images)
         printLog("Testing with n of " + str(len(test_features)))
         score = model.score(test_features, test_targets)
-        printLog("Classifier score:" + str(score))
+        printLog("Evaluation results:" + str(score))
+        writeToFile(summarySavePath, "Evaluation results:" + str(score) + '\n\n')
 
-    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr))
+    plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr)) 
     return score
 
 def main_KNN(train_images, eval_images):
@@ -492,8 +496,18 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
 
     # first parameter is left empty as train_images need to be split which depends on crossvalidation or not
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
-    model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'test_model', None]
-    model_params.append(model1_params)
+    for f_c in range(1, 3):
+        for n_c in range(1, 4):
+            for n_l in range(1, 4):
+                for k_s in range(2, 4):
+                    model_name = 'model_'+str(f_c)+'_'+str(n_c)+'_'+str(n_l)+'_'+str(k_s)
+                    model_param = [[[],[]], getLayerStack(num_chunks = n_c, num_conv2d_layers = n_l, kern_size = k_s, stride = 1, pad = 'valid', num_fc_layers = f_c), 0, 10, (48,48), model_name, None]
+                    model_params.append(model_param)
+                    printLog('added model with params, num_fc_layers:' +str(f_c)+', num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s))
+    
+    # train single model
+    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'test_model', None]
+    # model_params.append(model1_params)
 
     # load a model and only evaluate it
     # model2_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   

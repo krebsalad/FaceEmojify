@@ -134,7 +134,7 @@ resources/*/fer2013
 images/figure*
 resources/*tar.gz*
 resources/*zip*
-images/*
+images/test*
 models/test*
 tensorlog
 log.txt
