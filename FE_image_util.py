@@ -134,7 +134,52 @@ def parseHeaders(headerList):
         dataType += h2[0]
     return dataType.lower()
 
-def readImagesFromCsv(path, max_n=0, usage_skip_list=[]):
+def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3):
+    normalized_images = []
+
+    # count amount of images per emotion
+    feature_counts = [0] * n_emotions
+    for img in images:
+        if img.emotion == -1:
+            continue
+        feature_counts[img.emotion] += 1
+
+    # calculate average and or set to max_sample size
+    average_count = sum(feature_counts) / len(feature_counts)
+    if(max_n != 0 and average_count > max_n/5):
+        average_count = max_n/5
+    
+    # add images to normalized list
+    normalized_feature_counts = [0] * n_emotions
+    for img in images:
+        if img.emotion == -1:
+            continue
+
+        if normalized_feature_counts[img.emotion] < average_count:
+            normalized_images.append(img)
+            normalized_feature_counts[img.emotion] += 1
+
+    # fill in missing data
+    for i, count in enumerate(normalized_feature_counts):
+        if count >= average_count:
+            continue
+        
+        count_left = average_count - count
+        duplications = 0
+        while count_left > 0 and duplications < max_duplications:
+            for img in images:
+                if count_left <= 0:
+                    break
+                if img.emotion != i:
+                    continue
+                normalized_images.append(img)
+                count_left -= 1
+            duplications += 1
+
+    return normalized_images
+
+
+def readImagesFromCsv(path, max_n=0, usage_skip_list=[], normalize_data_set=False):
     printLog("reading image data " + path)
 
     # read data
@@ -179,9 +224,12 @@ def readImagesFromCsv(path, max_n=0, usage_skip_list=[]):
             printLog("no implementation for datatype: " + dataType)
             return []
 
-        if(max_n != 0 and i > max_n-1):
+        if(max_n != 0 and i > max_n-1 and not normalize_data_set):
             break
     printLog("read data succefully: length of images " + str(len(images)))
+
+    if normalize_data_set:
+        images = normalizeDataSet(images, max_n=max_n, n_emotions=7)
     return images
 
 # opencv util functions

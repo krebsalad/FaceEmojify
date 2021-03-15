@@ -535,7 +535,7 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv")
+    train_images = readImagesFromCsv("resources/train.csv", max_n=5000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
     main_CNN(train_images, eval_images, crossValidate=True)
