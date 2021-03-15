@@ -408,6 +408,14 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
     printLog("Saving model as " + modelSavePath)
     model.save(modelSavePath)
 
+    # save summary
+    summarySavePath = 'models/' + modelSaveName + '/' + 'summary.txt'
+    if fold_nr == 0:
+        summarySaveFile = open(summarySavePath, "w+")
+        summarySaveFile.close()
+
+    writeToFile(summarySavePath, 'Summary ' + modelSaveName + ' fold ' + str(fold_nr) + ':\n' + getModelSummaryAsString(model) + '\n')
+
     return model
 
 def setPredictionsOnImages(_classifier, _images, model_name='model', usingCNN=False, image_shape=(48,48), max_n=0):

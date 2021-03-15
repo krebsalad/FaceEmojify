@@ -7,13 +7,17 @@ from datetime import datetime
 
 
 # python util
-log_file = 'log.txt'
-logFile = open(log_file, "w+")
+log_file_path = 'log.txt'
+logFile = open(log_file_path, "w+")
 logFile.close()
+
+def writeToFile(file_path, txt):
+    with open(file_path, "a") as myFile:
+        myFile.write(txt + '\n')
+
 def printLog(log_txt):
     print(log_txt)
-    with open(log_file, "a") as logFile:
-        logFile.write(log_txt + '\n')
+    writeToFile(log_file_path, log_txt)
 
 def release_list(a):
    del a[:]
