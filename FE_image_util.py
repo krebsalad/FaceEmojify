@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import math
 import os
-import matplotlib.pyplot as plt
 from datetime import datetime
 
 
@@ -146,8 +145,8 @@ def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3):
 
     # calculate average and or set to max_sample size
     average_count = sum(feature_counts) / len(feature_counts)
-    if(max_n != 0 and average_count > max_n/5):
-        average_count = max_n/5
+    if(max_n != 0 and average_count > max_n/n_emotions):
+        average_count = max_n/n_emotions
     
     # add images to normalized list
     normalized_feature_counts = [0] * n_emotions

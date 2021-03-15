@@ -7,12 +7,14 @@ import random
 import threading
 import time
 
+import matplotlib.pyplot as plt
+plt_lock = threading.Lock()
+
+# read args
 for arg in sys.argv:
     if arg == 'gpu':
         gpus = tf.config.experimental.list_physical_devices("GPU")
         tf.config.experimental.set_memory_growth(gpus[0], True)
-
-plt_lock = threading.Lock()
 
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
@@ -25,7 +27,7 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
         splits = 2
 
     # 100 as random seed for same results
-    skf = StratifiedKFold(n_splits=splits, random_state=None, shuffle=False)
+    skf = StratifiedKFold(n_splits=splits, random_state=1, shuffle=True)
 
     folds = [[[],[]]] * splits
     i = 0
@@ -83,6 +85,11 @@ def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride =
     # INPUT (images 48x48x1)
     input_layer = [Input(shape=(48, 48, 1))]
 
+    # pre processing
+    preprocessing_layer = [experimental.preprocessing.RandomFlip("horizontal"), 
+                            experimental.preprocessing.RandomRotation(0.1), 
+                            experimental.preprocessing.RandomZoom(0.1)]
+
     # [CONV with RELU -> POOL] chunk loop
     chunks = num_chunks
     layer_stack = []
@@ -106,7 +113,7 @@ def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride =
     # Finally, last classification layer (7 because we have 7 emotion classes)
     classification_layer = [Dense(7, activation="softmax")]
 
-    cnn_stack = input_layer + layer_stack + flatten_layer + fc_relu_stack + classification_layer
+    cnn_stack = input_layer + preprocessing_layer + layer_stack + flatten_layer + fc_relu_stack + classification_layer
 
     return cnn_stack
 
@@ -121,10 +128,14 @@ def plotImagesClasses(_images, show=False, name='figure1', _classRange=7):
         plt.bar(range(len(classCount)), classCount)
         save_path = 'images/'+ name + '.png'
         printLog("saving classes figures as " + save_path)
+        plt.xlabel('emotions')
+        plt.ylabel('count')
         plt.savefig(save_path)
         if show:
             plt.show()
         plt.clf()
+        plt.cla()
+        plt.close()
     return True
 
 def plotHistory(history,epochs,show=False,name='figure2'):
@@ -142,12 +153,16 @@ def plotHistory(history,epochs,show=False,name='figure2'):
         plt.plot(epochs_range, val_acc, label='Validation Accuracy')
         plt.legend(loc='lower right')
         plt.title('Training and Validation Accuracy')
+        plt.xlabel('epochs')
+        plt.ylabel('accuracy')
 
         plt.subplot(2, 2, 2)
         plt.plot(epochs_range, loss, label='Training Loss')
         plt.plot(epochs_range, val_loss, label='Validation Loss')
         plt.legend(loc='upper right')
         plt.title('Training and Validation Loss')
+        plt.xlabel('epochs')
+        plt.ylabel('loss')
 
         save_path = 'images/' + name + '.png'
         printLog("saving classes figures as " + save_path)
@@ -155,6 +170,8 @@ def plotHistory(history,epochs,show=False,name='figure2'):
         if show:
             plt.show()
         plt.clf()
+        plt.cla()
+        plt.close()
     return True
 
 def plotRocCurve(model, test_features, test_targets, name='figure3', numOfClasses=7, _show=False):
@@ -191,6 +208,8 @@ def plotRocCurve(model, test_features, test_targets, name='figure3', numOfClasse
         printLog("saving roc curve figure as " + save_path)
         fig.savefig(save_path)
         plt.clf()
+        plt.cla()
+        plt.close()
 
 def plotConfusionMatrix(model, test_features, test_targets, name='figure4', usingCNN=False, _show=False):
     import seaborn as sns
@@ -235,6 +254,8 @@ def plotConfusionMatrix(model, test_features, test_targets, name='figure4', usin
         printLog("saving conf mat figures as " + save_path)
         fig.savefig(save_path)
         plt.clf()
+        plt.cla()
+        plt.close()
 
 def plotPresionPlot(model, test_features, test_targets, name='figure5', numOfClasses=7, _show=False):
     from sklearn.metrics import precision_recall_curve, auc  
@@ -270,34 +291,62 @@ def plotPresionPlot(model, test_features, test_targets, name='figure5', numOfCla
         printLog("saving precision plot as " + save_path)
         fig.savefig(save_path)
         plt.clf()
+        plt.cla()
+        plt.close()
 
 # classifier
-def trainKNNClassifier(train_test_images, modelName="model_knn", fold_nr=0, n_folds=5,showPlot=False):
+def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, showPlot=False, clearMem=True):
     from sklearn import neighbors
     # setup classifier
     from sklearn.multiclass import OneVsRestClassifier
     
-    classifier = OneVsRestClassifier(neighbors.KNeighborsClassifier(n_neighbors=3))
-
-    if not os.path.isdir('images/'+modelName):
-        os.makedirs('images/'+modelName)
+    classifier = None
+    if use_one_vs_rest:
+        classifier = OneVsRestClassifier(neighbors.KNeighborsClassifier(n_neighbors=5, algorithm=algorithm, leaf_size=leaf_size))
+    else:
+        classifier = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=algorithm, leaf_size=leaf_size)
+    
+    if not os.path.isdir('images/'+modelSaveName):
+        os.makedirs('images/'+modelSaveName)
+    if not os.path.isdir('models/'+modelSaveName):
+        os.makedirs('models/'+modelSaveName)
 
     # split data into sample and validation sets
     sample_instances = train_test_images[0]
+    validation_instances = train_test_images[1]
 
-    plotImagesClasses(sample_instances, show=showPlot,name=modelName+'/classes_train_fold_'+str(fold_nr))
+    plotImagesClasses(sample_instances, show=showPlot,name=modelSaveName+'/classes_train_fold_'+str(fold_nr))
 
-    sample_features, sample_targets, sample_usage = getImagesAsDataLists(sample_instances)
-    # validation_features, validation_targets, validation_usage = getImagesAsDataLists(validation_instances)
+    sample_features, sample_targets, tmp = getImagesAsDataLists(sample_instances)
+    validation_features, validation_targets, tmp = getImagesAsDataLists(validation_instances)
     
     # train
     printLog("Training with n of " + str(len(sample_features)))
+
+    # clean up
+    if clearMem:
+        release_list(sample_instances)
+        release_list(validation_instances)
+        release_list(tmp)
+        release_list(train_test_images)
 
     start_time = time.time()
     classifier.fit(sample_features, sample_targets)
     time_passed = time.time() - start_time
 
-    printLog("Succesfully completed training of " + modelName + " in " + str(time_passed))
+    # validate
+    validation_accuracy = classifier.score(validation_features, validation_targets)
+
+    # save summary
+    summarySavePath = 'models/' + modelSaveName + '/' + 'summary.txt'
+    if fold_nr == 0:
+        summarySaveFile = open(summarySavePath, "w+")
+        summarySaveFile.close()
+    summary = 'trained model ' + modelSaveName + '_fold_' + str(fold_nr) +  ' with neighbours:' + str(n_neighbors) + ' oneVsRest:' + str(use_one_vs_rest) + ' algoritm:' + algorithm + 'leaf size:' + str(leaf_size) + '\n'
+    summary += 'accuracy: ' + str(validation_accuracy)
+    writeToFile(summarySavePath, summary)
+
+    printLog("Succesfully completed training of " + modelSaveName + " in " + str(time_passed))
     return classifier
 
 def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False, clearMem=True):
@@ -339,7 +388,7 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
         opt = Adam(lr=0.000001)
         model.compile(optimizer = opt , loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) , metrics = ['accuracy'])
 
-    # load onlt the model
+    # load only the model
     if epochs == 0 and loadModelPath != None:
         printLog("Skipping training for model "+ modelSaveName + "_fold_" + str(fold_nr) + ", because epochs set to 0")
         printLog(getModelSummaryAsString(model))
@@ -397,7 +446,7 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
         callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=0))
     
     start_time = time.time()
-    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=16, callbacks=callbacks)
+    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
     time_passed = time.time() - start_time
 
     printLog("Succesfully completed training of " + modelSaveName + "_fold_" + str(fold_nr) + " in " + str(time_passed))
@@ -477,75 +526,95 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
     plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr)) 
     return score
 
-def main_KNN(train_images, eval_images):
-    # train
-    images_fold = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), 1)
-    classifier = trainKNNClassifier(images_fold, 'modelKNN')
+def get_explatory_cnn_testing_models(bounds, epochs=10):
+    model_type, model_params = [], []
+    for n_c in range(bounds[0][0], bounds[0][1] + 1):
+        for n_l in range(bounds[1][0], bounds[1][1] + 1):
+            for k_s in range(bounds[2][0], bounds[2][1] + 1):
+                model_name = 'model_'+str(n_c)+'_'+str(n_l)+'_'+str(k_s)
+                model_param = [[[],[]], getLayerStack(num_chunks = n_c, num_conv2d_layers = n_l, kern_size = k_s, stride = 1, pad = 'valid', num_fc_layers = 1), 0, epochs, (48,48), model_name, None]
+                model_params.append(model_param)
+                model_type.append('cnn')
+                printLog('added model with params, num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s))
+    return model_type, model_params
 
-    # evaluate
-    evaluateModel(classifier, eval_images, name='modelKNN')
-
-    # show images
-    # setPredictionsOnImages(classifier, eval_images, max_n=50)
-    # showImages(eval_images, _showPredictedEmotion=True)
-    # writeImages(eval_images, _showPredictedEmotion=True, max_n=50)
-
-def main_CNN(train_images, eval_images, threading=False, crossValidate=False, useThreading=False):
+def train(train_images, eval_images, threading=False, crossValidate=False, folds=5, useThreading=False):
     # setup models
+    model_type = []
     model_params = []
 
+    # 1) training cnn model
     # first parameter is left empty as train_images need to be split which depends on crossvalidation or not
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
-    for f_c in range(1, 3):
-        for n_c in range(1, 4):
-            for n_l in range(1, 4):
-                for k_s in range(2, 4):
-                    model_name = 'model_'+str(f_c)+'_'+str(n_c)+'_'+str(n_l)+'_'+str(k_s)
-                    model_param = [[[],[]], getLayerStack(num_chunks = n_c, num_conv2d_layers = n_l, kern_size = k_s, stride = 1, pad = 'valid', num_fc_layers = f_c), 0, 10, (48,48), model_name, None]
-                    model_params.append(model_param)
-                    printLog('added model with params, num_fc_layers:' +str(f_c)+', num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s))
-    
-    # train single model
-    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'test_model', None]
-    # model_params.append(model1_params)
 
-    # load a model and only evaluate it
+    # train a cnn model
+    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'model1', None]
+    # model_params.append(model1_params)
+    # model_type.append('cnn')
+
+    # load a cnn model and only evaluate it
     # model2_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
     # model_params.append(model2_params)
+    # model_type.append('cnn')
+
+    # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
+    model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 2), (1, 4), (1, 4)], epochs=50)
+
+    # 2) training knn model
+
+    # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, showPlot=False
+    # train knn model
+    # model3_params = [[[],[]], 'model_KNN_test', 0, 3, False, 'auto', 30]
+    # model_params.append(model3_params)
+    # model_type.append('knn')
 
     # train and evaluate all models
-    scores = []
+    model_scores = []
     for p, params in enumerate(model_params):
         # normal training if not cross validating or any training is done(when epochs is 0)
-        if not crossValidate or not params[3]:
-            params[0] = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), 1)
+        fold_count = folds
+        if not crossValidate:
+            fold_count = 1
 
-            model = trainCNNClassifier(*params)
+        # cross validate
+        cross_scores = []
+        for i in range(0, fold_count):
+            usingCNN = False
+            model_name = 'model'
+            params[0] = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), fold_count)[i]
+            score = []
 
-            score = evaluateModel(model, eval_images, usingCNN=True, name=model_params[p][5])
-            scores.append([score])
-
-            del model
-
-        # cross validation
-        else:
-            s = []
-            for i in range(0, 5):
-                params[0] = splitInstancesForTraining(train_images, getImagesEmotionsLists(train_images), 5)[i]
+            # train cnn
+            model = None
+            if model_type[p] == 'cnn':
                 params[2] = i
+                model_name=model_params[p][5]
+                usingCNN = True
 
                 model = trainCNNClassifier(*params)
 
-                score = evaluateModel(model, eval_images, usingCNN=True, name=model_params[p][5], fold_nr=i)
-                s.append(score)
+                score = evaluateModel(model, eval_images, usingCNN=usingCNN, name=model_name, fold_nr=i)
 
-                del model
+            # train knn / not working well yet with cross validation (need to figure how to clear a session)
+            if model_type[p] == 'knn':
+                params[2] = i
+                model_name=model_params[p][1]
 
-            scores.append(s)
+                model = trainKNNClassifier(*params)
+
+                score = evaluateModel(model, eval_images, usingCNN=usingCNN, name=model_name, fold_nr=i)
+
+            cross_scores.append(score)
+
+            # clean up
+            del model
+
+        model_scores.append(cross_scores)
     
     # show results
-    for i, s in enumerate(scores):
+    for i, s in enumerate(model_scores):
         printLog("Score model " + str(i) + ":" + str(s) + ", average: " + str(sum(s)/len(s)))
+    
     # show images
     # setPredictionsOnImages(classifier, eval_images, usingCNN=True, max_n=50)
     # showImages(eval_images, _showPredictedEmotion=True)
@@ -554,10 +623,10 @@ def main_CNN(train_images, eval_images, threading=False, crossValidate=False, us
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=5000, normalize_data_set=True)
+    train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    main_CNN(train_images, eval_images, crossValidate=True)
+    train(train_images, eval_images, crossValidate=True)
     sys.exit(0)
 
 if __name__ == "__main__":
