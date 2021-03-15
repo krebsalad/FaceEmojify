@@ -7,6 +7,9 @@ import random
 import threading
 import time
 
+gpus = tf.config.experimental.list_physical_devices("GPU")
+tf.config.experimental.set_memory_growth(gpus[0], True)
+
 plt_lock = threading.Lock()
 
 # for general use
@@ -392,7 +395,7 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
         callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_path, histogram_freq=0))
     
     start_time = time.time()
-    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=32, callbacks=callbacks)
+    history = model.fit(sample_features,sample_targets,epochs = epochs , validation_data = (validation_features, validation_targets), batch_size=16, callbacks=callbacks)
     time_passed = time.time() - start_time
 
     printLog("Succesfully completed training of " + modelSaveName + "_fold_" + str(fold_nr) + " in " + str(time_passed))
