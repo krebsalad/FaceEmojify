@@ -21,10 +21,9 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
     from sklearn.model_selection import StratifiedKFold
     from sklearn.model_selection import train_test_split
 
-    original_splits = splits
-
     if splits == 1:
-        splits = 2
+        x_train, x_test, _, _ = train_test_split(train_instances, train_targets, test_size=0.20, random_state=1)
+        return [[x_train, x_test]]
 
     # 100 as random seed for same results
     skf = StratifiedKFold(n_splits=splits, random_state=1, shuffle=True)
@@ -38,8 +37,6 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
             folds[i][1].append(train_instances[v])
         i+=1
 
-    if original_splits == 1:
-        return folds[0]
     return folds
 
 def visualizeImageActivations(model, train_images, image_shape=(48,48), _show=False, _num_show_img=3):
@@ -626,7 +623,7 @@ def main():
     train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=True)
+    train(train_images, eval_images, crossValidate=False)
     sys.exit(0)
 
 if __name__ == "__main__":
