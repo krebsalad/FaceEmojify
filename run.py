@@ -555,13 +555,13 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('cnn')
 
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
-    model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 2), (1, 4), (1, 4)], epochs=50)
+    model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 2), (2, 4), (3, 4)], epochs=100)
 
     # 2) training knn model
 
     # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, showPlot=False
     # train knn model
-    # model3_params = [[[],[]], 'model_KNN_test', 0, 3, False, 'auto', 30]
+    # model3_params = [[[],[]], 'model_KNN_test', 0, 3, True, 'auto', 30]
     # model_params.append(model3_params)
     # model_type.append('knn')
 
@@ -599,7 +599,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 
                 model = trainKNNClassifier(*params)
 
-                score = evaluateModel(model, eval_images, usingCNN=usingCNN, name=model_name, fold_nr=i)
+                score = evaluateModel(model, eval_images, name=model_name, fold_nr=i)
 
             cross_scores.append(score)
 
@@ -623,7 +623,7 @@ def main():
     train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=False)
+    train(train_images, eval_images, crossValidate=True, folds=3)
     sys.exit(0)
 
 if __name__ == "__main__":
