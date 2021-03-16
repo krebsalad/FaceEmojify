@@ -624,7 +624,7 @@ def main():
     train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=False)
+    train(train_images, eval_images, crossValidate=True, folds=5)
     sys.exit(0)
 
 if __name__ == "__main__":
