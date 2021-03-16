@@ -104,7 +104,7 @@ def getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride =
     # FC RELU layer loop
     fc_relu_stack = []
     for x in range(num_fc_layers):
-        fc_relu_stack += [Dense((32 * pow(2, (num_chunks - x))), activation='relu')]
+        fc_relu_stack += [Dense((32 * pow(2, (num_fc_layers - x))), activation='relu')]
         fc_relu_stack += [Dropout(0.5)]
 
     # Finally, last classification layer (7 because we have 7 emotion classes)
@@ -528,11 +528,12 @@ def get_explatory_cnn_testing_models(bounds, epochs=10):
     for n_c in range(bounds[0][0], bounds[0][1] + 1):
         for n_l in range(bounds[1][0], bounds[1][1] + 1):
             for k_s in range(bounds[2][0], bounds[2][1] + 1):
-                model_name = 'model_'+str(n_c)+'_'+str(n_l)+'_'+str(k_s)
-                model_param = [[[],[]], getLayerStack(num_chunks = n_c, num_conv2d_layers = n_l, kern_size = k_s, stride = 1, pad = 'valid', num_fc_layers = 1), 0, epochs, (48,48), model_name, None]
-                model_params.append(model_param)
-                model_type.append('cnn')
-                printLog('added model with params, num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s))
+                for f_c in range(bounds[3][0], bounds[3][1] + 1):
+                    model_name = 'model_'+str(n_c)+'_'+str(n_l)+'_'+str(k_s)+'_'+str(f_c)
+                    model_param = [[[],[]], getLayerStack(num_chunks = n_c, num_conv2d_layers = n_l, kern_size = k_s, stride = 1, pad = 'valid', num_fc_layers = f_c), 0, epochs, (48,48), model_name, None]
+                    model_params.append(model_param)
+                    model_type.append('cnn')
+                    printLog('added model with params, num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s) + 'num_fc_layers:' + str(f_c))
     return model_type, model_params
 
 def train(train_images, eval_images, threading=False, crossValidate=False, folds=5, useThreading=False):
@@ -555,7 +556,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('cnn')
 
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
-    model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 2), (2, 4), (3, 4)], epochs=100)
+    model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
 
     # 2) training knn model
 
@@ -623,7 +624,7 @@ def main():
     train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=True, folds=3)
+    train(train_images, eval_images, crossValidate=False)
     sys.exit(0)
 
 if __name__ == "__main__":
