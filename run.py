@@ -556,7 +556,23 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('cnn')
 
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
-    model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
+    # model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
+
+    model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1', None]
+    model_params.append(model2_params)
+    model_type.append('cnn')
+
+    model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1', None]
+    model_params.append(model3_params)
+    model_type.append('cnn')
+
+    model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model1', None]
+    model_params.append(model4_params)
+    model_type.append('cnn')
+
+    model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model1', None]
+    model_params.append(model5_params)
+    model_type.append('cnn')
 
     # 2) training knn model
 
@@ -624,7 +640,7 @@ def main():
     train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=True, folds=5)
+    train(train_images, eval_images, crossValidate=False)
     sys.exit(0)
 
 if __name__ == "__main__":
