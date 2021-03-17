@@ -355,7 +355,9 @@ def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epo
     from keras.optimizers import Adam, RMSprop
     from sklearn.decomposition import PCA
 
+    # make sure last session is cleared
     clear_session()
+    gc.collect()
 
     if not os.path.isdir('images/'+modelSaveName):
         os.makedirs('images/'+modelSaveName)
@@ -566,25 +568,25 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
 
     # train a cnn model
-    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1_1000', None]
-    # model_params.append(model1_params)
-    # model_type.append('cnn')
+    model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 1000, (48,48), 'model1_1000', None]
+    model_params.append(model1_params)
+    model_type.append('cnn')
 
-    # model2_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model2_1000', None]
-    # model_params.append(model2_params)
-    # model_type.append('cnn')
+    model2_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model2_1000', None]
+    model_params.append(model2_params)
+    model_type.append('cnn')
 
-    # model3_params = [[[],[]], getLayerStack(num_chunks = 3, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model3_1000', None]
-    # model_params.append(model3_params)
-    # model_type.append('cnn')
+    model3_params = [[[],[]], getLayerStack(num_chunks = 3, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 1000, (48,48), 'model3_1000', None]
+    model_params.append(model3_params)
+    model_type.append('cnn')
 
-    # model4_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 1, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model4_1000', None]
-    # model_params.append(model4_params)
-    # model_type.append('cnn')
+    model4_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 1, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model4_1000', None]
+    model_params.append(model4_params)
+    model_type.append('cnn')
 
-    # model5_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model5_1000', None]
-    # model_params.append(model4_params)
-    # model_type.append('cnn')
+    model5_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model5_1000', None]
+    model_params.append(model5_params)
+    model_type.append('cnn')
 
     # load a cnn model and only evaluate it
     # modelx_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
@@ -603,7 +605,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('knn')
 
     # explatory testing with knn
-    model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10), (1, 5)])
+    # model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10), (1, 5)])
 
     # train and evaluate all models
     model_scores = []
@@ -645,8 +647,6 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 
             # clean up
             del model
-            if usingGPU:
-                gc.collect()
 
         model_scores.append(cross_scores)
     
