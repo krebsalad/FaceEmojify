@@ -136,5 +136,7 @@ resources/*tar.gz*
 resources/*zip*
 images/test*
 models/test*
+models/model*
+images/model*
 tensorlog
 log.txt

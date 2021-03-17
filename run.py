@@ -6,15 +6,18 @@ import tensorflow as tf
 import random
 import threading
 import time
+import gc
 
 import matplotlib.pyplot as plt
 plt_lock = threading.Lock()
 
 # read args
+usingGPU = False
 for arg in sys.argv:
     if arg == 'gpu':
         gpus = tf.config.experimental.list_physical_devices("GPU")
         tf.config.experimental.set_memory_growth(gpus[0], True)
+        usingGPU = True
 
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
@@ -523,6 +526,23 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
     plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr)) 
     return score
 
+def get_explatory_knn_testing_models(bounds):
+    model_type, model_params = [], []
+    for n in range(bounds[0][0], bounds[0][1] + 1):
+        for l in range(bounds[1][0], bounds[1][1] + 1):
+                for o in range(0, 2):
+                    algo = 'auto'
+                    ovs = False
+                    if o == 1:
+                        ovs = True
+
+                    model_name = 'model_knn_'+str(n)+'_'+str(l)+'_'+str(o)+'_'+algo
+                    model_param = [[[],[]], model_name, 0, n, ovs, algo, l * 10]
+                    model_params.append(model_param)
+                    model_type.append('knn')
+                    printLog('added knn model with params, neighbors:'+str(n)+', leaf size:'+str(l * 10)+' algo:'+str(algo) + ' one vs rest:' + str(o))
+    return model_type, model_params
+
 def get_explatory_cnn_testing_models(bounds, epochs=10):
     model_type, model_params = [], []
     for n_c in range(bounds[0][0], bounds[0][1] + 1):
@@ -546,33 +566,33 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
 
     # train a cnn model
-    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'model1', None]
+    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1_1000', None]
     # model_params.append(model1_params)
     # model_type.append('cnn')
 
-    # load a cnn model and only evaluate it
-    # model2_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
+    # model2_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model2_1000', None]
     # model_params.append(model2_params)
+    # model_type.append('cnn')
+
+    # model3_params = [[[],[]], getLayerStack(num_chunks = 3, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model3_1000', None]
+    # model_params.append(model3_params)
+    # model_type.append('cnn')
+
+    # model4_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 1, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model4_1000', None]
+    # model_params.append(model4_params)
+    # model_type.append('cnn')
+
+    # model5_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model5_1000', None]
+    # model_params.append(model4_params)
+    # model_type.append('cnn')
+
+    # load a cnn model and only evaluate it
+    # modelx_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
+    # model_params.append(modelx_params)
     # model_type.append('cnn')
 
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
     # model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
-
-    model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1', None]
-    model_params.append(model2_params)
-    model_type.append('cnn')
-
-    model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1', None]
-    model_params.append(model3_params)
-    model_type.append('cnn')
-
-    model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model1', None]
-    model_params.append(model4_params)
-    model_type.append('cnn')
-
-    model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model1', None]
-    model_params.append(model5_params)
-    model_type.append('cnn')
 
     # 2) training knn model
 
@@ -581,6 +601,9 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model3_params = [[[],[]], 'model_KNN_test', 0, 3, True, 'auto', 30]
     # model_params.append(model3_params)
     # model_type.append('knn')
+
+    # explatory testing with knn
+    model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10), (1, 5)])
 
     # train and evaluate all models
     model_scores = []
@@ -622,6 +645,8 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 
             # clean up
             del model
+            if usingGPU:
+                gc.collect()
 
         model_scores.append(cross_scores)
     
@@ -637,7 +662,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
+    train_images = readImagesFromCsv("resources/train.csv", normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
     train(train_images, eval_images, crossValidate=False)
