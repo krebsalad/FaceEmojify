@@ -19,16 +19,15 @@ for arg in sys.argv:
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
     from sklearn.model_selection import StratifiedKFold
-    from sklearn.model_selection import train_test_split
 
+    original_splits = splits
     if splits == 1:
-        x_train, x_test, _, _ = train_test_split(train_instances, train_targets, test_size=0.20, random_state=1)
-        return [[x_train, x_test]]
+        splits = 2
 
     # 100 as random seed for same results
     skf = StratifiedKFold(n_splits=splits, random_state=1, shuffle=True)
 
-    folds = [[[],[]]] * splits
+    folds = [[[],[]] for i in range(splits)]
     i = 0
     for sample_indecies, validation_indecies in skf.split(train_instances, train_targets):
         for s in sample_indecies:
@@ -36,6 +35,9 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
         for v in validation_indecies:
             folds[i][1].append(train_instances[v])
         i+=1
+
+    if original_splits == 1:
+        return folds[0]
 
     return folds
 
@@ -296,10 +298,10 @@ def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, 
     from sklearn import neighbors
     # setup classifier
     from sklearn.multiclass import OneVsRestClassifier
-    
+
     classifier = None
     if use_one_vs_rest:
-        classifier = OneVsRestClassifier(neighbors.KNeighborsClassifier(n_neighbors=5, algorithm=algorithm, leaf_size=leaf_size))
+        classifier = OneVsRestClassifier(neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=algorithm, leaf_size=leaf_size))
     else:
         classifier = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=algorithm, leaf_size=leaf_size)
     
@@ -340,7 +342,7 @@ def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, 
         summarySaveFile = open(summarySavePath, "w+")
         summarySaveFile.close()
     summary = 'trained model ' + modelSaveName + '_fold_' + str(fold_nr) +  ' with neighbours:' + str(n_neighbors) + ' oneVsRest:' + str(use_one_vs_rest) + ' algoritm:' + algorithm + 'leaf size:' + str(leaf_size) + '\n'
-    summary += 'accuracy: ' + str(validation_accuracy)
+    summary += 'Validation accuracy: ' + str(validation_accuracy)
     writeToFile(summarySavePath, summary)
 
     printLog("Succesfully completed training of " + modelSaveName + " in " + str(time_passed))
@@ -494,12 +496,12 @@ def setPredictionsOnImages(_classifier, _images, model_name='model', usingCNN=Fa
             break
 
 def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show=False, name='model', fold_nr=0):
-    test_features, test_targets, test_usage = [], [], []
+    test_features, test_targets, tmp = [], [], []
     score = 0
     summarySavePath = 'models/' + name + '/' + 'summary.txt'
 
     if usingCNN:
-        test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
+        test_features, test_targets, tmp = getImagesAsCvDataLists(test_images)
         test_features = np.array(test_features) / 255
         test_features = tf.reshape(test_features, (-1, image_shape[0], image_shape[1], 1))
         test_targets = np.array(test_targets)
@@ -514,7 +516,7 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         plotPresionPlot(model, test_features, test_targets, _show=_show, name=name+'/precision_plot_fold_'+str(fold_nr))
 
     else:
-        test_features, test_targets, test_usage = getImagesAsDataLists(test_images)
+        test_features, test_targets, tmp = getImagesAsDataLists(test_images)
         printLog("Testing with n of " + str(len(test_features)))
         score = model.score(test_features, test_targets)
         printLog("Evaluation results:" + str(score))
@@ -551,26 +553,26 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('cnn')
 
     # load a cnn model and only evaluate it
-    # model2_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
-    # model_params.append(model2_params)
+    # modelx_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
+    # model_params.append(modelx_params)
     # model_type.append('cnn')
 
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
     # model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
 
-    model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1', None]
+    model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model2', None]
     model_params.append(model2_params)
     model_type.append('cnn')
 
-    model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1', None]
+    model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model3', None]
     model_params.append(model3_params)
     model_type.append('cnn')
 
-    model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model1', None]
+    model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model4', None]
     model_params.append(model4_params)
     model_type.append('cnn')
 
-    model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model1', None]
+    model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model5', None]
     model_params.append(model5_params)
     model_type.append('cnn')
 
@@ -578,8 +580,8 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 
     # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, showPlot=False
     # train knn model
-    # model3_params = [[[],[]], 'model_KNN_test', 0, 3, True, 'auto', 30]
-    # model_params.append(model3_params)
+    # model6_params = [[[],[]], 'model_KNN_test', 0, 3, True, 'auto', 30]
+    # model_params.append(model6_params)
     # model_type.append('knn')
 
     # train and evaluate all models
@@ -640,7 +642,7 @@ def main():
     train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=False)
+    train(train_images, eval_images, crossValidate=True)
     sys.exit(0)
 
 if __name__ == "__main__":
