@@ -6,23 +6,27 @@ import tensorflow as tf
 import random
 import threading
 import time
+import gc
 
 import matplotlib.pyplot as plt
 plt_lock = threading.Lock()
 
 # read args
+usingGPU = False
 for arg in sys.argv:
     if arg == 'gpu':
         gpus = tf.config.experimental.list_physical_devices("GPU")
         tf.config.experimental.set_memory_growth(gpus[0], True)
+        usingGPU = True
 
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
     from sklearn.model_selection import StratifiedKFold
+    from sklearn.model_selection import train_test_split
 
-    original_splits = splits
     if splits == 1:
-        splits = 2
+        x_train, x_test, _, _ = train_test_split(train_instances, train_targets, test_size=0.20, random_state=1)
+        return [[x_train, x_test]]
 
     # 100 as random seed for same results
     skf = StratifiedKFold(n_splits=splits, random_state=1, shuffle=True)
@@ -35,9 +39,6 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
         for v in validation_indecies:
             folds[i][1].append(train_instances[v])
         i+=1
-
-    if original_splits == 1:
-        return folds[0]
 
     return folds
 
@@ -529,20 +530,13 @@ def get_explatory_knn_testing_models(bounds):
     model_type, model_params = [], []
     for n in range(bounds[0][0], bounds[0][1] + 1):
         for l in range(bounds[1][0], bounds[1][1] + 1):
-            for a in range(bounds[2][0], bounds[2][1] + 1):
                 for o in range(0, 2):
                     algo = 'auto'
                     ovs = False
-                    if a == 1:
-                        algo = 'ball_tree'
-                    if a == 2:
-                        algo = 'kd_tree'
-                    if a == 3:
-                        algo = 'brute'
                     if o == 1:
                         ovs = True
 
-                    model_name = 'model_knn_'+str(n)+'_'+str(l)+'_'+str(a)+'_'+str(o)
+                    model_name = 'model_knn_'+str(n)+'_'+str(l)+'_'+str(o)+'_'+algo
                     model_param = [[[],[]], model_name, 0, n, ovs, algo, l * 10]
                     model_params.append(model_param)
                     model_type.append('knn')
@@ -572,8 +566,24 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
 
     # train a cnn model
-    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 10, (48,48), 'model1', None]
+    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model1_1000', None]
     # model_params.append(model1_params)
+    # model_type.append('cnn')
+
+    # model2_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model2_1000', None]
+    # model_params.append(model2_params)
+    # model_type.append('cnn')
+
+    # model3_params = [[[],[]], getLayerStack(num_chunks = 3, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 500, (48,48), 'model3_1000', None]
+    # model_params.append(model3_params)
+    # model_type.append('cnn')
+
+    # model4_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 1, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model4_1000', None]
+    # model_params.append(model4_params)
+    # model_type.append('cnn')
+
+    # model5_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 500, (48,48), 'model5_1000', None]
+    # model_params.append(model4_params)
     # model_type.append('cnn')
 
     # load a cnn model and only evaluate it
@@ -584,22 +594,6 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
     # model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
 
-    # model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model2', None]
-    # model_params.append(model2_params)
-    # model_type.append('cnn')
-
-    # model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model3', None]
-    # model_params.append(model3_params)
-    # model_type.append('cnn')
-
-    # model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model4', None]
-    # model_params.append(model4_params)
-    # model_type.append('cnn')
-
-    # model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model5', None]
-    # model_params.append(model5_params)
-    # model_type.append('cnn')
-
     # 2) training knn model
 
     # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, showPlot=False
@@ -609,7 +603,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('knn')
 
     # explatory testing with knn
-    model_type, model_params = get_explatory_knn_testing_models(bounds=[(5, 5), (5, 5), (3, 3)])
+    model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10), (1, 5)])
 
     # train and evaluate all models
     model_scores = []
@@ -651,6 +645,8 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 
             # clean up
             del model
+            if usingGPU:
+                gc.collect()
 
         model_scores.append(cross_scores)
     
@@ -666,10 +662,10 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 # main prog
 def main():
     # read data
-    train_images = readImagesFromCsv("resources/train.csv", max_n=42000, normalize_data_set=True)
+    train_images = readImagesFromCsv("resources/train.csv", normalize_data_set=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
-    train(train_images, eval_images, crossValidate=True)
+    train(train_images, eval_images, crossValidate=False)
     sys.exit(0)
 
 if __name__ == "__main__":
