@@ -525,6 +525,30 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
     plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr)) 
     return score
 
+def get_explatory_knn_testing_models(bounds):
+    model_type, model_params = [], []
+    for n in range(bounds[0][0], bounds[0][1] + 1):
+        for l in range(bounds[1][0], bounds[1][1] + 1):
+            for a in range(bounds[2][0], bounds[2][1] + 1):
+                for o in range(0, 2):
+                    algo = 'auto'
+                    ovs = False
+                    if a == 1:
+                        algo = 'ball_tree'
+                    if a == 2:
+                        algo = 'kd_tree'
+                    if a == 3:
+                        algo = 'brute'
+                    if o == 1:
+                        ovs = True
+
+                    model_name = 'model_knn_'+str(n)+'_'+str(l)+'_'+str(a)+'_'+str(o)
+                    model_param = [[[],[]], model_name, 0, n, ovs, algo, l * 10]
+                    model_params.append(model_param)
+                    model_type.append('knn')
+                    printLog('added knn model with params, neighbors:'+str(n)+', leaf size:'+str(l * 10)+' algo:'+str(algo) + ' one vs rest:' + str(o))
+    return model_type, model_params
+
 def get_explatory_cnn_testing_models(bounds, epochs=10):
     model_type, model_params = [], []
     for n_c in range(bounds[0][0], bounds[0][1] + 1):
@@ -535,7 +559,7 @@ def get_explatory_cnn_testing_models(bounds, epochs=10):
                     model_param = [[[],[]], getLayerStack(num_chunks = n_c, num_conv2d_layers = n_l, kern_size = k_s, stride = 1, pad = 'valid', num_fc_layers = f_c), 0, epochs, (48,48), model_name, None]
                     model_params.append(model_param)
                     model_type.append('cnn')
-                    printLog('added model with params, num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s) + 'num_fc_layers:' + str(f_c))
+                    printLog('added model with params, num_chunks:'+str(n_c)+', num_conv2d_layers:'+str(n_l)+', kernel_size:'+str(k_s) + ' num_fc_layers:' + str(f_c))
     return model_type, model_params
 
 def train(train_images, eval_images, threading=False, crossValidate=False, folds=5, useThreading=False):
@@ -560,21 +584,21 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # explatory testing (dont use below line in combination with custom models, in case you want to, dont forget to concat the model_params list)
     # model_type, model_params = get_explatory_cnn_testing_models(bounds=[(1, 3), (2, 3), (3, 4), (1,2)], epochs=50)
 
-    model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model2', None]
-    model_params.append(model2_params)
-    model_type.append('cnn')
+    # model2_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model2', None]
+    # model_params.append(model2_params)
+    # model_type.append('cnn')
 
-    model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model3', None]
-    model_params.append(model3_params)
-    model_type.append('cnn')
+    # model3_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 100, (48,48), 'model3', None]
+    # model_params.append(model3_params)
+    # model_type.append('cnn')
 
-    model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model4', None]
-    model_params.append(model4_params)
-    model_type.append('cnn')
+    # model4_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model4', None]
+    # model_params.append(model4_params)
+    # model_type.append('cnn')
 
-    model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model5', None]
-    model_params.append(model5_params)
-    model_type.append('cnn')
+    # model5_params = [[[],[]], getLayerStack(num_chunks = 1, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 100, (48,48), 'model5', None]
+    # model_params.append(model5_params)
+    # model_type.append('cnn')
 
     # 2) training knn model
 
@@ -583,6 +607,9 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model6_params = [[[],[]], 'model_KNN_test', 0, 3, True, 'auto', 30]
     # model_params.append(model6_params)
     # model_type.append('knn')
+
+    # explatory testing with knn
+    model_type, model_params = get_explatory_knn_testing_models(bounds=[(5, 5), (5, 5), (3, 3)])
 
     # train and evaluate all models
     model_scores = []
