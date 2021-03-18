@@ -3,6 +3,7 @@ import numpy as np
 import math
 import os
 from datetime import datetime
+import random
 
 
 # python util
@@ -125,6 +126,13 @@ def getImagesAsCvDataLists(_images):
         usageList.append(im.usage)
     return (imagesList, emotionsList, usageList)
 
+def rotateCvMat(mat, angel):#parameter angel in degrees
+    h = mat.shape[0]
+    w = mat.shape[1]
+    mat_rot = cv2.getRotationMatrix2D((w/2, h/2),angel, 1)
+    mat_res = cv2.warpAffine(mat, mat_rot, (w, h), flags=cv2.INTER_LINEAR)
+    return mat_res
+
 # read images from csv with headers emotion, Usage, pixels
 def parseHeaders(headerList):
     dataType = ''
@@ -133,7 +141,7 @@ def parseHeaders(headerList):
         dataType += h2[0]
     return dataType.lower()
 
-def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3):
+def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=5, augment_duplications=False):
     normalized_images = []
 
     # count amount of images per emotion
@@ -159,6 +167,7 @@ def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3):
             normalized_feature_counts[img.emotion] += 1
 
     # fill in missing data
+    random.seed(10)
     for i, count in enumerate(normalized_feature_counts):
         if count >= average_count:
             continue
@@ -171,6 +180,14 @@ def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3):
                     break
                 if img.emotion != i:
                     continue
+
+                if duplications > 0 and augment_duplications:
+                    r = random.randint(0, 1)
+                    if r == 1:
+                        img.setFromCvMat(cv2.flip(img.getCvMat(), 1))
+                    r = random.randint(-5, 5)
+                    img.setFromCvMat(rotateCvMat(img.getCvMat(), r))
+
                 normalized_images.append(img)
                 count_left -= 1
             duplications += 1
@@ -178,7 +195,7 @@ def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3):
     return normalized_images
 
 
-def readImagesFromCsv(path, max_n=0, usage_skip_list=[], normalize_data_set=False):
+def readImagesFromCsv(path, max_n=0, usage_skip_list=[], normalize_data_set=False, normalize_augmentation=True):
     printLog("reading image data " + path)
 
     # read data
@@ -228,8 +245,28 @@ def readImagesFromCsv(path, max_n=0, usage_skip_list=[], normalize_data_set=Fals
     printLog("read data succefully: length of images " + str(len(images)))
 
     if normalize_data_set:
-        images = normalizeDataSet(images, max_n=max_n, n_emotions=7)
+        images = normalizeDataSet(images, max_n=max_n, n_emotions=7, max_duplications=5, augment_duplications=normalize_augmentation)
     return images
+
+def writeImagesAsCsv(path, images):
+    print('writing images to csv file...')
+
+    # clean contents
+    out_csv_file = open(path, "w+")
+    out_csv_file.close()
+
+    with open(path, 'a') as out_csv_file:
+        txt = 'emotion, Usage, pixels\n'
+        out_csv_file.write(txt)
+        for img in images:
+            txt = str(img.emotion) + ','
+            txt += img.usage + ','
+            for p in img.pixels:
+                txt += str(p) + ' '
+            txt += '\n'
+            out_csv_file.write(txt)
+    
+    print('wrote '+str(len(images))+' image succesfully')
 
 # opencv util functions
 def addEmotionToImage(_image, _emotion):

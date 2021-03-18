@@ -605,7 +605,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('knn')
 
     # explatory testing with knn
-    # model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10), (1, 5)])
+    # model_type, model_params = get_explatory_knn_testing_models(bounds=[(7, 10), (1, 5)])
 
     # train and evaluate all models
     model_scores = []
@@ -666,6 +666,8 @@ def main():
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     
     train(train_images, eval_images, crossValidate=False)
+
+    # writeImagesAsCsv("resources/icml_face_data_augmented.csv", eval_images)
     sys.exit(0)
 
 if __name__ == "__main__":
