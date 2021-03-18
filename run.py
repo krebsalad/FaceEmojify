@@ -532,17 +532,20 @@ def get_explatory_knn_testing_models(bounds):
     model_type, model_params = [], []
     for n in range(bounds[0][0], bounds[0][1] + 1):
         for l in range(bounds[1][0], bounds[1][1] + 1):
-                for o in range(0, 2):
-                    algo = 'auto'
+            for a in range(0, 2):
+                    o = 1
+                    algo = 'ball_tree'
+                    if a == 1:
+                        algo = 'kd_tree'
                     ovs = False
                     if o == 1:
                         ovs = True
 
-                    model_name = 'model_knn_'+str(n)+'_'+str(l)+'_'+str(o)+'_'+algo
-                    model_param = [[[],[]], model_name, 0, n, ovs, algo, l * 10]
+                    model_name = 'a_model_knn_'+str(n)+'_'+str(l*5)+'_'+str(o)+'_'+algo
+                    model_param = [[[],[]], model_name, 0, n, ovs, algo, l * 5]
                     model_params.append(model_param)
                     model_type.append('knn')
-                    printLog('added knn model with params, neighbors:'+str(n)+', leaf size:'+str(l * 10)+' algo:'+str(algo) + ' one vs rest:' + str(o))
+                    printLog('added knn model with params, neighbors:'+str(n)+', leaf size:'+str(l * 5)+' algo:'+str(algo) + ' one vs rest:' + str(o))
     return model_type, model_params
 
 def get_explatory_cnn_testing_models(bounds, epochs=10):
@@ -568,25 +571,25 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # parameter order: train_test_images, layers, fold_nr, epochs, image_shape, modelSaveName, loadModelPath, (optionals, can leave default): showPlot, useTensorBoard clearMem(True)
 
     # train a cnn model
-    model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 1000, (48,48), 'model1_1000', None]
-    model_params.append(model1_params)
-    model_type.append('cnn')
+    # model1_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 1000, (48,48), 'model1_1000', None]
+    # model_params.append(model1_params)
+    # model_type.append('cnn')
 
-    model2_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model2_1000', None]
-    model_params.append(model2_params)
-    model_type.append('cnn')
+    # model2_params = [[[],[]], getLayerStack(num_chunks = 2, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model2_1000', None]
+    # model_params.append(model2_params)
+    # model_type.append('cnn')
 
-    model3_params = [[[],[]], getLayerStack(num_chunks = 3, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 1000, (48,48), 'model3_1000', None]
-    model_params.append(model3_params)
-    model_type.append('cnn')
+    # model3_params = [[[],[]], getLayerStack(num_chunks = 3, num_conv2d_layers = 2, kern_size = 3, stride = 1, pad = 'valid', num_fc_layers = 1), 0, 1000, (48,48), 'model3_1000', None]
+    # model_params.append(model3_params)
+    # model_type.append('cnn')
 
-    model4_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 1, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model4_1000', None]
-    model_params.append(model4_params)
-    model_type.append('cnn')
+    # model4_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 1, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model4_1000', None]
+    # model_params.append(model4_params)
+    # model_type.append('cnn')
 
-    model5_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model5_1000', None]
-    model_params.append(model5_params)
-    model_type.append('cnn')
+    # model5_params = [[[],[]], getLayerStack(num_chunks = 4, num_conv2d_layers = 2, kern_size = 4, stride = 1, pad = 'valid', num_fc_layers = 2), 0, 1000, (48,48), 'model5_1000', None]
+    # model_params.append(model5_params)
+    # model_type.append('cnn')
 
     # load a cnn model and only evaluate it
     # modelx_params = [[[],[]], [], 0, 0, (48,48), 'test_model_2', 'models/2000EpochTestModel.keras']   
@@ -605,7 +608,8 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # model_type.append('knn')
 
     # explatory testing with knn
-    # model_type, model_params = get_explatory_knn_testing_models(bounds=[(7, 10), (1, 5)])
+    model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 3), (1, 10)])
+
 
     # train and evaluate all models
     model_scores = []

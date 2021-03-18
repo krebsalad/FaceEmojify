@@ -141,7 +141,7 @@ def parseHeaders(headerList):
         dataType += h2[0]
     return dataType.lower()
 
-def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=5, augment_duplications=False):
+def normalizeDataSet(images, max_n=0, n_emotions=7, max_duplications=3, augment_duplications=False):
     normalized_images = []
 
     # count amount of images per emotion
