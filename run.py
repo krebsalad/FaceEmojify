@@ -21,7 +21,7 @@ for arg in sys.argv:
 
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
-    from sklearn.model_selection import KFold
+    from sklearn.model_selection import StratifiedKFold
     from sklearn.model_selection import train_test_split
 
     if splits == 1:
@@ -29,7 +29,7 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
         return [[x_train, x_test]]
 
     # 100 as random seed for same results
-    skf = KFold(n_splits=splits, random_state=1, shuffle=True)
+    skf = StratifiedKFold(n_splits=splits, random_state=1, shuffle=True)
 
     folds = [[[],[]] for i in range(splits)]
     i = 0
