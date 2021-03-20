@@ -106,12 +106,15 @@ def getImagesEmotionsLists(_images):
         emotionsList.append(im.emotion)
     return emotionsList
 
-def getImagesAsDataLists(_images):
+def getImagesAsDataLists(_images, dimensions=0):
     pixelsList = []
     emotionsList = []
     usageList = []
     for im in _images:
-        pixelsList.append(im.pixels)
+        if not dimensions:
+            pixelsList.append(im.pixels)
+        else:
+            pixelsList.append(im.pixels[:dimensions])
         emotionsList.append(im.emotion)
         usageList.append(im.usage)
     return (pixelsList, emotionsList, usageList)
@@ -205,43 +208,51 @@ def readImagesFromCsv(path, max_n=0, usage_skip_list=[], normalize_data_set=Fals
     if (data_f == None):   
         printLog("no data found")
         return []
-    data = data_f.readlines()
     data_f.close()
 
     # create image objects
     images = []
     dataType = ''
-    for i, line in enumerate(data):
-        line = line.replace('\n', "").replace('"', "").split(",")
-        if(i == 0):
-            dataType = parseHeaders(line)
-            if(dataType == ''):
-                printLog('no headers found')
+    with open(path) as data_f:
+        for i, line in enumerate(data_f):
+            line = line.replace('\n', "").replace('"', "").split(",")
+            if(i == 0):
+                dataType = parseHeaders(line)
+                if(dataType == ''):
+                    printLog('no headers found')
+                    break
+                printLog("found headers: " + str(line) + ", set as dataType: " + dataType)
+                continue
+            
+            img = None
+            if (dataType == 'ep'):
+                img = Image(i, np.asarray(line[1].split(" "), dtype=np.uint8, order='C'), int(line[0]),"Training")
+                images.append(img)
+            
+            elif (dataType == 'p'):
+                img = Image(i, np.asarray(line[0].split(" "), dtype=np.uint8, order='C'), _usage="PrivateTest")
+                images.append(img)
+
+            elif (dataType == 'eup'):
+                if len(usage_skip_list):
+                    if listFind(usage_skip_list, line[1]):
+                        continue
+                img = Image(i, np.asarray(line[2].split(" "), dtype=np.uint8, order='C'), int(line[0]), _usage=line[1])
+                images.append(img)
+            elif (dataType.find('eupp') != -1):
+                if len(usage_skip_list):
+                    if listFind(usage_skip_list, line[1]):
+                        continue
+                    
+                pixels = line[2:len(line)]
+                img = Image(i, np.asarray(pixels, dtype=np.float32, order='C'), int(line[0]), _usage=line[1])
+                images.append(img)
+            else:
+                printLog("no implementation for datatype: " + dataType)
+                return []
+
+            if(max_n != 0 and i > max_n-1 and not normalize_data_set):
                 break
-            printLog("found headers: " + str(line) + ", set as dataType: " + dataType)
-            continue
-            
-        img = None
-        if (dataType == 'ep'):
-            img = Image(i, np.asarray(line[1].split(" "), dtype=np.uint8, order='C'), int(line[0]),"Training")
-            images.append(img)
-            
-        elif (dataType == 'p'):
-            img = Image(i, np.asarray(line[0].split(" "), dtype=np.uint8, order='C'), _usage="PrivateTest")
-            images.append(img)
-
-        elif (dataType == 'eup'):
-            if len(usage_skip_list):
-                if listFind(usage_skip_list, line[1]):
-                    continue
-            img = Image(i, np.asarray(line[2].split(" "), dtype=np.uint8, order='C'), int(line[0]), _usage=line[1])
-            images.append(img)
-        else:
-            printLog("no implementation for datatype: " + dataType)
-            return []
-
-        if(max_n != 0 and i > max_n-1 and not normalize_data_set):
-            break
     printLog("read data succefully: length of images " + str(len(images)))
 
     if normalize_data_set:
