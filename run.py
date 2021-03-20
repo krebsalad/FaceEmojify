@@ -21,7 +21,7 @@ for arg in sys.argv:
 
 # for general use
 def splitInstancesForTraining(train_instances, train_targets, splits=5):
-    from sklearn.model_selection import StratifiedKFold
+    from sklearn.model_selection import KFold
     from sklearn.model_selection import train_test_split
 
     if splits == 1:
@@ -29,9 +29,9 @@ def splitInstancesForTraining(train_instances, train_targets, splits=5):
         return [[x_train, x_test]]
 
     # 100 as random seed for same results
-    skf = StratifiedKFold(n_splits=splits, random_state=1, shuffle=True)
+    skf = KFold(n_splits=splits, random_state=1, shuffle=True)
 
-    folds = [[[],[]]] * splits
+    folds = [[[],[]] for i in range(splits)]
     i = 0
     for sample_indecies, validation_indecies in skf.split(train_instances, train_targets):
         for s in sample_indecies:
@@ -659,11 +659,11 @@ def main_knn_selection():
     # read data
     train_images = readImagesFromCsv("resources/icml_face_data_augmented_pca_subset.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
     eval_images = readImagesFromCsv("resources/icml_face_data_augmented_pca_subset.csv", usage_skip_list=['PublicTest', 'Training'])
-    train(train_images, eval_images, crossValidate=False, mode=5)
+    train(train_images, eval_images, crossValidate=True, mode=5)
 
     train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'], normalize_data_set=True, normalize_augmentation=True)
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'], normalize_data_set=True, normalize_augmentation=True)
-    train(train_images, eval_images, crossValidate=False, mode=4)
+    train(train_images, eval_images, crossValidate=True, mode=4)
 
 def main_cnn_selection():
     train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
