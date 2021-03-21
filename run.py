@@ -503,7 +503,7 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
     test_features, test_targets, test_usage = [], [], []
     score = 0
     summarySavePath = 'models/' + name + '/' + 'summary.txt'
-
+    plotImagesClasses(test_images, _show, name+'/classes_eval_fold_'+str(fold_nr))
     if usingCNN:
         test_features, test_targets, test_usage = getImagesAsCvDataLists(test_images)
         test_features = np.array(test_features) / 255
@@ -536,11 +536,9 @@ def get_explatory_knn_testing_models(bounds, name_prefix='model_knn_'):
             for p in range(bounds[2][0], bounds[2][1] + 1):
                 o = 1
                 algo = 'auto'
-                ovs = False
-                if o == 1:
-                    ovs = True
+                ovs = True
 
-                model_name = 'pca_model_knn_'+str(n)+'_'+ str(d * 33) +'_'+algo+'_'+str(p)
+                model_name = name_prefix+str(n)+'_'+ str(d * 33) +'_'+algo+'_'+str(p)
                 model_param = [[[],[]], model_name, 0, n, ovs, algo, 50, d * 33, p]
                 model_params.append(model_param)
                 model_type.append('knn')
@@ -589,16 +587,16 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, dimensions=0, power_param=0, showPlot=False
     # train knn model
     if mode == 3:
-        model3_params = [[[],[]], 'model_KNN_test', 0, 3, True, 'auto', 30] 
+        model3_params = [[[],[]], 'model_KNN_test', 0, 1, True, 'auto', 0, 2] 
         model_params.append(model3_params)
         model_type.append('knn')
 
     # explatory testing with knn, using pca or without
     if mode == 4: # without pca
-        model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10),(0, 0), (1,3)], name_prefix='model_knn_')
+        model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 5),(0, 0), (1,2)], name_prefix='model_knn_')
 
     if mode == 5: # with pca
-        model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 10),(1, 6), (2,2)], name_prefix='pca_model_knn_')
+        model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 5),(1, 6), (1,2)], name_prefix='pca_model_knn_')
 
     # train and evaluate all models
     model_scores = []
@@ -621,11 +619,10 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
             if model_type[p] == 'cnn':
                 params[2] = i
                 model_name=params[5]
-                usingCNN = True
 
                 model = trainCNNClassifier(*params)
 
-                score = evaluateModel(model, eval_images, usingCNN=usingCNN, name=model_name, fold_nr=i)
+                score = evaluateModel(model, eval_images, usingCNN=True, name=model_name, fold_nr=i)
 
             # train knn / not working well yet with cross validation (need to figure how to clear a session)
             if model_type[p] == 'knn':
@@ -635,7 +632,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
 
                 model = trainKNNClassifier(*params)
 
-                score = evaluateModel(model, eval_images, name=model_name, fold_nr=i, dimensions=dimensions)
+                score = evaluateModel(model, eval_images, usingCNN=False, name=model_name, fold_nr=i, dimensions=dimensions)
 
             cross_scores.append(score)
 
@@ -662,7 +659,7 @@ def main_knn_selection():
     train(train_images, eval_images, crossValidate=True, mode=5)
 
     train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'], normalize_data_set=True, normalize_augmentation=True)
-    eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'], normalize_data_set=True, normalize_augmentation=True)
+    eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     train(train_images, eval_images, crossValidate=True, mode=4)
 
 def main_cnn_selection():
@@ -679,6 +676,13 @@ def main_cnn_load():
     train_images = []
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     train(train_images, eval_images, crossValidate=False, mode=0)
+
+def augment_data():
+    train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'], normalize_data_set=True, normalize_augmentation=True)
+    eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['Training'])
+
+    writeImagesAsCsv("resources/icml_face_data_augmented_train.csv", train_images)
+    writeImagesAsCsv("resources/icml_face_data_eval.csv", eval_images)
 
 def main():
     main_knn_selection()
