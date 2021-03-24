@@ -135,8 +135,10 @@ images/figure*
 resources/*tar.gz*
 resources/*zip*
 images/test*
+images/pca*
 models/test*
 models/model*
+models/pca*
 images/model*
 tensorlog
 log.txt
