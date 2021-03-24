@@ -293,7 +293,7 @@ def addEmotionToImage(_image, _emotion):
     return np.concatenate((img, emoji_mat), axis=1)
 
 def showImages(_images, max_n=0, _showPredictedEmotion=False):
-    printLog("showing " + len(_images) + " images, press <esc> in the opencv window to quit")
+    printLog("showing " + str(len(_images)) + " images, press <esc> in the opencv window to quit")
     for i, img in enumerate(_images):
         if(max_n != 0 and i > max_n-1):
             break
@@ -301,6 +301,7 @@ def showImages(_images, max_n=0, _showPredictedEmotion=False):
         if _showPredictedEmotion:
             cv2.imshow("prediction image", addEmotionToImage(img, img.p_emotion))
         else:
+            print("emotion:", img.emotion)
             cv2.imshow('image', img.getCvMat())
 
         key = cv2.waitKey(0)

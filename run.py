@@ -684,8 +684,55 @@ def augment_data():
     writeImagesAsCsv("resources/icml_face_data_augmented_train.csv", train_images)
     writeImagesAsCsv("resources/icml_face_data_eval.csv", eval_images)
 
+def show_images():
+    train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['Training'])
+    showImages(train_images)
+
+def printKnnModelEvaluation():
+    model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 5),(1, 6), (1,2)], name_prefix='pca_model_knn_')
+    model_type2, model_params2 = get_explatory_knn_testing_models(bounds=[(1, 5),(0, 0), (1,2)], name_prefix='model_knn_')
+    model_params += model_params2
+    model_type += model_type2
+
+    summaries = dict()
+    for p in model_params:
+        sum_file_path = 'models/'+ p[1] +'/summary.txt'
+        if os.path.isfile(sum_file_path):
+            average_res = 0
+            count_res = 0
+
+            with open(sum_file_path) as sum_file:
+                for l in sum_file:
+                    if l.find("Evaluation results:") == -1:
+                        continue
+                    average_res += float(l.split(":")[1])
+                    count_res += 1
+
+                if average_res != 0:
+                    summaries[p[1]] = average_res/count_res
+                print("found " + sum_file_path)
+        else:
+            print("could not open file " + sum_file_path)
+    
+    combined_sum_file_path = "model_knn_summaries.csv"
+    combined_sum_file = open(combined_sum_file_path, "w+")
+    combined_sum_file.close()
+
+    header_txt = "name,neighbours,pca_dimensions,metric,eval_accuracy"
+    writeToFile(combined_sum_file_path, header_txt)
+    for i, p in enumerate(model_params):
+        if model_type[i] == "knn":
+            if p[1] in summaries:
+                txt = p[1] + ","+ str(p[3]) + "," + str(p[7]) + "," + ("manhattan," if (p[8] == 1) else "euclidian,") + str(summaries[p[1]])
+                print(txt)
+                writeToFile(combined_sum_file_path, txt)
+            
+    # combined_sum_file_path = "model_cnn_summaries.csv"
+    # combined_sum_file = open(combined_sum_file_path, "w+")
+    # combined_sum_file.close()
+
 def main():
-    main_knn_selection()
+    printKnnModelEvaluation()
     sys.exit(0)
 
 if __name__ == "__main__":
