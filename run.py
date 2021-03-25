@@ -302,7 +302,7 @@ def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, 
     
     classifier = None
     if use_one_vs_rest:
-        classifier = OneVsRestClassifier(neighbors.KNeighborsClassifier(n_neighbors=5, algorithm=algorithm, leaf_size=leaf_size, p=power_param))
+        classifier = OneVsRestClassifier(neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=algorithm, leaf_size=leaf_size, p=power_param))
     else:
         classifier = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=algorithm, leaf_size=leaf_size, p=power_param)
     
