@@ -174,12 +174,17 @@ def plotHistory(history,epochs,show=False,name='figure2'):
         plt.close()
     return True
 
-def plotRocCurve(model, test_features, test_targets, name='figure3', numOfClasses=7, _show=False):
+def plotRocCurve(model, test_features, test_targets, usingCNN=False, name='figure3', numOfClasses=7, _show=False):
     from sklearn.metrics import roc_curve, auc
     from sklearn.preprocessing import label_binarize
     from scipy.optimize import curve_fit
 
-    predictions = model.predict(test_features)
+    predictions = [0] * numOfClasses
+    if usingCNN:
+        predictions = model.predict(test_features)
+    else:
+        predictions = model.predict_proba(test_features)
+    
     test_targets_bin = label_binarize(test_targets, classes=[0,1,2,3,4,5,6])
 
     fpr = dict()
@@ -257,14 +262,19 @@ def plotConfusionMatrix(model, test_features, test_targets, name='figure4', usin
         plt.cla()
         plt.close()
 
-def plotPresionPlot(model, test_features, test_targets, name='figure5', numOfClasses=7, _show=False):
+def plotPresionPlot(model, test_features, test_targets, usingCNN=False, name='figure5', numOfClasses=7, _show=False):
     from sklearn.metrics import precision_recall_curve, auc  
     from sklearn.preprocessing import label_binarize
     
-    predictions = model.predict(test_features)
+    predictions = [0] * numOfClasses
+    if usingCNN:
+        predictions = model.predict(test_features)
+    else:
+        predictions = model.predict_proba(test_features)
     
     test_targets_bin = label_binarize(test_targets, classes=[0,1,2,3,4,5,6])
 
+    print(predictions)
     recall = dict()
     precision = dict()
     thresholds = dict()
@@ -332,7 +342,7 @@ def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, 
 
     start_time = time.time()
     classifier.fit(sample_features, sample_targets)
-    time_passed = time.time() - start_time
+    time_training = time.time() - start_time
 
     # validate
     printLog("Validating with n of " + str(len(validation_features)))
@@ -344,10 +354,11 @@ def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, 
         summarySaveFile = open(summarySavePath, "w+")
         summarySaveFile.close()
     summary = 'trained model ' + modelSaveName + '_fold_' + str(fold_nr) +  ' with neighbours:' + str(n_neighbors) + ' oneVsRest:' + str(use_one_vs_rest) + ' algoritm:' + algorithm + ' leaf size:' + str(leaf_size) + ' pca:'+str(dimensions)+' minkowski param' + str(power_param) + '\n'
-    summary += 'accuracy: ' + str(validation_accuracy)
+    summary += 'accuracy: ' + str(validation_accuracy) + "\n"
+    summary += 'time training: ' + time_training + "\n"
     writeToFile(summarySavePath, summary)
 
-    printLog("Succesfully completed training of " + modelSaveName + " in " + str(time_passed) + "\nValidation accuracy: " + str(validation_accuracy))
+    printLog("Succesfully completed training of " + modelSaveName + " in " + str(time_training) + "\nValidation accuracy: " + str(validation_accuracy))
     return classifier
 
 def trainCNNClassifier(train_test_images, layers=getLayerStack(), fold_nr=0, epochs=500, image_shape=(48,48), modelSaveName='lastUsedModel', loadModelPath=None, showPlot=False, useTensorBoard=False, clearMem=True):
@@ -509,23 +520,27 @@ def evaluateModel(model, test_images, image_shape=(48,48), usingCNN=False, _show
         test_features = np.array(test_features) / 255
         test_features = tf.reshape(test_features, (-1, image_shape[0], image_shape[1], 1))
         test_targets = np.array(test_targets)
-   
+       
         printLog("Testing with n of " + str(len(test_features)))
+        start_time = time.time()
         results = model.evaluate(test_features, test_targets)
+        time_predicting = time.time() - start_time
+
         score = results[1]
         printLog("Evaluation results:" + str(results))
-        writeToFile(summarySavePath, "Evaluation results:" + str(results) + '\n\n')
-
-        plotRocCurve(model, test_features, test_targets, numOfClasses=7, _show=_show, name=name+'/roc_cruve_fold_'+str(fold_nr))
-        plotPresionPlot(model, test_features, test_targets, _show=_show, name=name+'/precision_plot_fold_'+str(fold_nr))
+        writeToFile(summarySavePath, "Evaluation results:" + str(results) + "\ntime_predicting:"+ str(time_predicting) + '\n\n')
 
     else:
         test_features, test_targets, test_usage = getImagesAsDataLists(test_images, dimensions=dimensions)
         printLog("Testing with n of " + str(len(test_features)))
+        start_time = time.time()
         score = model.score(test_features, test_targets)
+        time_predicting = time.time() - start_time
         printLog("Evaluation results:" + str(score))
-        writeToFile(summarySavePath, "Evaluation results:" + str(score) + '\n\n')
+        writeToFile(summarySavePath, "Evaluation results:" + str(score) + "\ntime_predicting:"+ str(time_predicting) + '\n\n')
 
+    plotRocCurve(model, test_features, test_targets, usingCNN=usingCNN, numOfClasses=7, _show=_show, name=name+'/roc_cruve_fold_'+str(fold_nr))
+    plotPresionPlot(model, test_features, test_targets, usingCNN=usingCNN, numOfClasses=7, _show=_show, name=name+'/precision_plot_fold_'+str(fold_nr))
     plotConfusionMatrix(model, test_features, test_targets, _show=_show, usingCNN=usingCNN, name=name+'/confusion_mat_fold_'+str(fold_nr)) 
     return score
 
@@ -587,7 +602,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, dimensions=0, power_param=0, showPlot=False
     # train knn model
     if mode == 3:
-        model3_params = [[[],[]], 'model_KNN_test', 0, 1, True, 'auto', 0, 2] 
+        model3_params = [[[],[]], 'test_model', 0, 5, True, 'auto', 50, 0, 2] 
         model_params.append(model3_params)
         model_type.append('knn')
 
@@ -658,9 +673,14 @@ def main_knn_selection():
     eval_images = readImagesFromCsv("resources/icml_face_data_augmented_pca_subset.csv", usage_skip_list=['PublicTest', 'Training'])
     train(train_images, eval_images, crossValidate=True, mode=5)
 
-    train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'], normalize_data_set=True, normalize_augmentation=True)
+    # train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'], normalize_data_set=True, normalize_augmentation=True)
+    # eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
+    # train(train_images, eval_images, crossValidate=True, mode=4)
+
+def main_knn_training():
+    train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
     eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
-    train(train_images, eval_images, crossValidate=True, mode=4)
+    train(train_images, eval_images, crossValidate=True, mode=3)
 
 def main_cnn_selection():
     train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
@@ -694,23 +714,36 @@ def printKnnModelEvaluation():
     model_params += model_params2
     model_type += model_type2
 
-    summaries = dict()
+    accuracies = dict()
+    t_time = dict()
+    p_time = dict()
     for p in model_params:
         sum_file_path = 'models/'+ p[1] +'/summary.txt'
         if os.path.isfile(sum_file_path):
             average_res = 0
             count_res = 0
 
+            average_t_time = 0
+            count_t_time = 0
+
+            average_p_time = 0
+            count_p_time = 0
             with open(sum_file_path) as sum_file:
                 for l in sum_file:
-                    if l.find("Evaluation results:") == -1:
-                        continue
-                    average_res += float(l.split(":")[1])
-                    count_res += 1
+                    if l.find("Evaluation results:") != -1:
+                        average_res += float(l.split(":")[1])
+                        count_res += 1
+                    elif l.find("time_training:") != -1:
+                        average_t_time += float(l.split(":")[1])
+                        count_t_time += 1
+                    elif l.find("time_predicting:") != -1:
+                        average_p_time += float(l.split(":")[1])
+                        count_p_time += 1
 
-                if average_res != 0:
-                    summaries[p[1]] = average_res/count_res
-                print("found " + sum_file_path)
+                if average_res != 0 and average_t_time != 0 and average_p_time != 0:
+                    accuracies[p[1]] = average_res/count_res
+                    t_time[p[1]] = average_t_time/count_t_time
+                    p_time[p[1]] = average_p_time/count_p_time
         else:
             print("could not open file " + sum_file_path)
     
@@ -718,21 +751,17 @@ def printKnnModelEvaluation():
     combined_sum_file = open(combined_sum_file_path, "w+")
     combined_sum_file.close()
 
-    header_txt = "name,neighbours,pca_dimensions,metric,eval_accuracy"
+    header_txt = "name,neighbours,pca_dimensions,metric,eval_accuracy,time_train,time_pred"
     writeToFile(combined_sum_file_path, header_txt)
     for i, p in enumerate(model_params):
         if model_type[i] == "knn":
-            if p[1] in summaries:
-                txt = p[1] + ","+ str(p[3]) + "," + str(p[7]) + "," + ("manhattan," if (p[8] == 1) else "euclidian,") + str(summaries[p[1]])
+            if p[1] in accuracies:
+                txt = p[1] + ","+ str(p[3]) + "," + str(p[7]) + "," + ("manhattan," if (p[8] == 1) else "euclidian,") + str(accuracies[p[1]] + "," + str(t_time[p[1]]) + "," + str(p_time[p[1]]))
                 print(txt)
                 writeToFile(combined_sum_file_path, txt)
-            
-    # combined_sum_file_path = "model_cnn_summaries.csv"
-    # combined_sum_file = open(combined_sum_file_path, "w+")
-    # combined_sum_file.close()
 
 def main():
-    printKnnModelEvaluation()
+    main_knn_training()
     sys.exit(0)
 
 if __name__ == "__main__":
