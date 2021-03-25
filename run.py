@@ -355,7 +355,7 @@ def trainKNNClassifier(train_test_images, modelSaveName="model_knn", fold_nr=0, 
         summarySaveFile.close()
     summary = 'trained model ' + modelSaveName + '_fold_' + str(fold_nr) +  ' with neighbours:' + str(n_neighbors) + ' oneVsRest:' + str(use_one_vs_rest) + ' algoritm:' + algorithm + ' leaf size:' + str(leaf_size) + ' pca:'+str(dimensions)+' minkowski param' + str(power_param) + '\n'
     summary += 'accuracy: ' + str(validation_accuracy) + "\n"
-    summary += 'time training: ' + time_training + "\n"
+    summary += 'time training: ' + str(time_training) + "\n"
     writeToFile(summarySavePath, summary)
 
     printLog("Succesfully completed training of " + modelSaveName + " in " + str(time_training) + "\nValidation accuracy: " + str(validation_accuracy))
