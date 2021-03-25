@@ -761,7 +761,7 @@ def printKnnModelEvaluation():
                 writeToFile(combined_sum_file_path, txt)
 
 def main():
-    main_knn_training()
+    main_knn_selection()
     sys.exit(0)
 
 if __name__ == "__main__":
