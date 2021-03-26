@@ -602,7 +602,7 @@ def train(train_images, eval_images, threading=False, crossValidate=False, folds
     # train_test_images, modelName, fold_nr, n_neighbors=5, use_one_vs_rest=False, algorithm='auto', leaf_size=30, dimensions=0, power_param=0, showPlot=False
     # train knn model
     if mode == 3:
-        model3_params = [[[],[]], 'test_model', 0, 5, True, 'auto', 50, 0, 2] 
+        model3_params = [[[],[]], 'test_model', 0, 1, True, 'auto', 50, 66, 2] 
         model_params.append(model3_params)
         model_type.append('knn')
 
@@ -677,10 +677,10 @@ def main_knn_selection():
     # eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
     # train(train_images, eval_images, crossValidate=True, mode=4)
 
-def main_knn_training():
-    train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
-    eval_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'Training'])
-    train(train_images, eval_images, crossValidate=True, mode=3)
+def main_knn_training_pca():
+    train_images = readImagesFromCsv("resources/icml_face_data_augmented_pca_subset.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
+    eval_images = readImagesFromCsv("resources/icml_face_data_augmented_pca_subset.csv", usage_skip_list=['PublicTest', 'Training'])
+    train(train_images, eval_images, crossValidate=False, mode=3)
 
 def main_cnn_selection():
     train_images = readImagesFromCsv("resources/icml_face_data.csv", usage_skip_list=['PublicTest', 'PrivateTest'])
@@ -758,7 +758,7 @@ def printKnnModelEvaluation():
                 writeToFile(combined_sum_file_path, txt)
 
 def main():
-    printKnnModelEvaluation()
+    main_knn_training_pca()
     sys.exit(0)
 
 if __name__ == "__main__":
