@@ -710,9 +710,6 @@ def show_images():
 
 def printKnnModelEvaluation():
     model_type, model_params = get_explatory_knn_testing_models(bounds=[(1, 5),(1, 6), (1,2)], name_prefix='pca_model_knn_')
-    model_type2, model_params2 = get_explatory_knn_testing_models(bounds=[(1, 5),(0, 0), (1,2)], name_prefix='model_knn_')
-    model_params += model_params2
-    model_type += model_type2
 
     accuracies = dict()
     t_time = dict()
@@ -733,7 +730,7 @@ def printKnnModelEvaluation():
                     if l.find("Evaluation results:") != -1:
                         average_res += float(l.split(":")[1])
                         count_res += 1
-                    elif l.find("time_training:") != -1:
+                    elif l.find("time training:") != -1:
                         average_t_time += float(l.split(":")[1])
                         count_t_time += 1
                     elif l.find("time_predicting:") != -1:
@@ -756,12 +753,12 @@ def printKnnModelEvaluation():
     for i, p in enumerate(model_params):
         if model_type[i] == "knn":
             if p[1] in accuracies:
-                txt = p[1] + ","+ str(p[3]) + "," + str(p[7]) + "," + ("manhattan," if (p[8] == 1) else "euclidian,") + str(accuracies[p[1]] + "," + str(t_time[p[1]]) + "," + str(p_time[p[1]]))
+                txt = p[1] + ","+ str(p[3]) + "," + str(p[7]) + "," + ("manhattan," if (p[8] == 1) else "euclidian,") + str(accuracies[p[1]]) + "," + str(t_time[p[1]]) + "," + str(p_time[p[1]])
                 print(txt)
                 writeToFile(combined_sum_file_path, txt)
 
 def main():
-    main_knn_selection()
+    printKnnModelEvaluation()
     sys.exit(0)
 
 if __name__ == "__main__":
